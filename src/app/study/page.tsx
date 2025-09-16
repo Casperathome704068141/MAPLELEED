@@ -3,13 +3,14 @@
 import * as React from 'react';
 import {
   Calendar as CalendarIcon,
-  CheckCircle2,
+  Check,
   Clock,
-  FileText,
-  LifeBuoy,
   Search,
   Loader2,
-  GraduationCap
+  GraduationCap,
+  Sparkles,
+  Award,
+  Star,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -58,16 +59,129 @@ function StudyHero() {
   return (
     <section className="bg-card py-20 md:py-28">
       <div className="container mx-auto px-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-headline font-bold">Find Your Perfect Course</h1>
+        <h1 className="text-4xl md:text-5xl font-headline font-bold">Your Canadian Study Permit, Sorted.</h1>
         <p className="mt-4 text-lg max-w-3xl mx-auto text-muted-foreground">
-          Use our AI-powered search to discover universities and programs that match your ambitions. Then, book a free consultation to create a winning application strategy.
+          From college applications to your study permit and travel arrangements, we provide end-to-end support for your journey to Canada. Explore our services and book a consultation today.
         </p>
          <Button size="lg" className="mt-8" asChild>
-          <a href="#course-finder">Find a Course</a>
+          <a href="#pricing">See Pricing Plans</a>
         </Button>
       </div>
     </section>
   );
+}
+
+function PricingSection() {
+    const tiers = [
+        {
+            name: "Standard",
+            price: "$145",
+            description: "Entry-level support for a confident start.",
+            icon: <Sparkles />,
+            features: [
+                "Full 1-hour expert consultation",
+                "Guidance on required documents & timelines",
+                "Appointment booking with visa experts",
+                "Receipt generation for records",
+            ],
+            cta: "Book a Consultation",
+        },
+        {
+            name: "Premium",
+            price: "$350",
+            description: "The most popular choice for comprehensive support.",
+            icon: <Award />,
+            features: [
+                "Everything in Standard",
+                "SOP or Letter of Explanation (LOE) writing support",
+                "College application support (up to 3 programs)",
+                "Tracking of IRCC application status",
+                "Priority WhatsApp/email support",
+            ],
+            cta: "Choose Premium",
+            highlight: true,
+        },
+        {
+            name: "Ultimate",
+            price: "$850",
+            description: "The zero-stress, all-inclusive package.",
+            icon: <Star />,
+            features: [
+                "Everything in Premium",
+                "End-to-end study permit application filing",
+                "Biometrics & interview booking assistance",
+                "Flight ticket & accommodation booking",
+                "Airport pickup arrangement",
+                "SIM card & banking setup",
+            ],
+            cta: "Go Ultimate",
+        },
+    ];
+
+    const addOns = [
+        { name: "SOP/LOE Writing", price: "$79" },
+        { name: "College Application (per program)", price: "$49" },
+        { name: "Flight Booking Service Fee", price: "$29" },
+        { name: "Accommodation Booking Service Fee", price: "$49" },
+        { name: "Airport Pickup", price: "$99" },
+        { name: "Insurance Setup Assistance", price: "$29" },
+    ];
+
+
+    return (
+        <section id="pricing" className="py-20 lg:py-28">
+            <div className="container mx-auto px-4">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-headline font-bold">Simple, Transparent Pricing</h2>
+                    <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
+                        Choose the right level of support for your journey to Canada. No hidden fees.
+                    </p>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+                    {tiers.map((tier) => (
+                        <Card key={tier.name} className={`flex flex-col ${tier.highlight ? 'border-primary ring-2 ring-primary shadow-2xl' : 'shadow-lg'}`}>
+                            <CardHeader className="text-center">
+                                <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4 text-primary">{tier.icon}</div>
+                                <CardTitle className="font-headline text-3xl">{tier.name}</CardTitle>
+                                <CardDescription className="text-base">{tier.description}</CardDescription>
+                                <p className="text-4xl font-bold font-headline pt-4">{tier.price}</p>
+                            </CardHeader>
+                            <CardContent className="flex-grow flex flex-col justify-between">
+                                <ul className="space-y-3 mb-8">
+                                    {tier.features.map((feature, index) => (
+                                        <li key={index} className="flex items-start">
+                                            <Check className="w-5 h-5 mr-2 text-primary shrink-0 mt-1" />
+                                            <span className="text-muted-foreground">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Button asChild size="lg" className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
+                                    <a href="#appointments">{tier.cta}</a>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                 <div className="mt-16">
+                    <h3 className="text-2xl font-headline font-bold text-center mb-8">Optional Add-Ons</h3>
+                     <Card className="max-w-2xl mx-auto">
+                        <CardContent className="p-6">
+                            <ul className="divide-y">
+                                {addOns.map((addOn, index) => (
+                                    <li key={index} className="flex justify-between items-center py-3">
+                                        <span className="text-muted-foreground">{addOn.name}</span>
+                                        <span className="font-semibold">{addOn.price}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                     </Card>
+                </div>
+            </div>
+        </section>
+    );
 }
 
 function SearchSubmitButton() {
@@ -88,12 +202,12 @@ function CourseFinderSection() {
     const [state, formAction] = useFormState(handleFindStudyOptions, initialStudyState);
 
     return (
-        <section id="course-finder" className="py-20 lg:py-28">
+        <section id="course-finder" className="py-20 lg:py-28 bg-secondary/30">
             <div className="container mx-auto px-4">
                  <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-headline font-bold">AI Course Finder</h2>
+                    <h2 className="text-3xl md:text-4xl font-headline font-bold">AI Course Finder (Canada)</h2>
                     <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
-                        Describe what you're looking for, and our AI will do the hard work.
+                        Describe what you're looking for, and our AI will find matching programs in Canadian institutions.
                     </p>
                 </div>
                 <Card className="max-w-3xl mx-auto shadow-lg">
@@ -102,7 +216,7 @@ function CourseFinderSection() {
                             <Input 
                                 name="query"
                                 id="query"
-                                placeholder='Try "Masters in Data Science in the USA"' 
+                                placeholder='Try "Diploma in Business in Toronto"' 
                                 className="h-12 text-base flex-grow"
                                 required 
                             />
@@ -214,9 +328,9 @@ function AppointmentSection() {
     <section id="appointments" className="py-20 lg:py-28 bg-card">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-headline font-bold">Book Your Free Consultation</h2>
+          <h2 className="text-3xl md:text-4xl font-headline font-bold">Book Your Consultation</h2>
           <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
-            Discuss your study options with an expert. Select a date and time that works for you.
+            Select a date and time to speak with one of our Canadian visa experts.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
@@ -284,61 +398,15 @@ function AppointmentSection() {
   );
 }
 
-function FaqSection() {
-  const faqs = [
-      {
-        question: "Is the initial consultation really free?",
-        answer: "Yes, absolutely. The first 30-minute consultation is completely free of charge. It's designed to help us understand your needs and for you to understand how we can help. There's no obligation to proceed further."
-      },
-      {
-        question: "How does the AI Course Finder work?",
-        answer: "Our AI tool uses a large language model trained on vast amounts of educational data. You provide a natural language query (like 'business analytics masters in Canada'), and it searches for matching universities and programs, presenting them in a structured format for you to explore."
-      },
-      {
-        question: "What happens after the consultation?",
-        answer: "You'll receive an email with an AI-generated summary of your discussion and a tailored document checklist. This gives you a clear and immediate action plan. You can then decide if you'd like to engage our full visa support services."
-      },
-      {
-        question: "Do you guarantee visa approval?",
-        answer: "No reputable consultant can guarantee visa approval, as the final decision rests with the government of the respective country. However, we guarantee that your application will be prepared with the utmost professionalism and accuracy to maximize your chances of success."
-      },
-      {
-        question: "What countries do you specialize in?",
-        answer: "Our team has extensive experience with student visa applications for the United States, United Kingdom, Canada, Australia, and many Schengen Area countries. Our AI tool can search for options globally, and we can advise on your specific destination during the consultation."
-      }
-  ]
-
-  return (
-    <section id="faq" className="py-20 lg:py-28">
-        <div className="container mx-auto px-4 max-w-4xl">
-            <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-headline font-bold">Frequently Asked Questions</h2>
-            </div>
-            <Accordion type="single" collapsible className="w-full">
-                {faqs.map((faq, index) => (
-                    <AccordionItem value={`item-${index}`} key={index}>
-                        <AccordionTrigger className="font-semibold text-left text-lg">{faq.question}</AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground text-base">
-                        {faq.answer}
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
-        </div>
-    </section>
-  )
-}
-
-
 export default function StudyPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow">
         <StudyHero />
+        <PricingSection />
         <CourseFinderSection />
         <AppointmentSection />
-        <FaqSection />
       </main>
       <Footer />
     </div>
