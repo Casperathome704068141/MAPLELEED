@@ -1,8 +1,8 @@
 'use server';
 import { Duffel } from '@duffel/api';
 
-const duffel = new Duffel({
+export const duffel = new Duffel({
   token: process.env.DUFFEL_ACCESS_TOKEN!,
 });
 
-export default duffel;
+export const DUFFEL_CURRENCY = 'USD';
