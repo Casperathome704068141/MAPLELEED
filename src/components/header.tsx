@@ -25,7 +25,7 @@ export default function Header() {
            <Button variant="ghost" asChild>
              <Link href="/admin">Admin Panel</Link>
            </Button>
-           <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+           <Button>
              Book Now
            </Button>
         </div>

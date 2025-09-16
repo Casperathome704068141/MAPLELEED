@@ -10,8 +10,6 @@ import {
   Plane,
   BedDouble,
   Search,
-  User,
-  Mail,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -63,7 +61,7 @@ function HeroSection() {
               From seamless appointment scheduling with visa experts to integrated travel booking, we're your co-pilot for a successful journey abroad.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button size="lg">
                 Book a Consultation <ArrowRight className="ml-2" />
               </Button>
               <Button size="lg" variant="outline">
@@ -222,7 +220,7 @@ function AppointmentSection() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full">Confirm Booking</Button>
+              <Button type="submit" className="w-full">Confirm Booking</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -282,7 +280,7 @@ function TravelSection() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full mt-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Button type="submit" className="w-full mt-6">
                     <Search className="mr-2 h-4 w-4" /> Search Flights
                   </Button>
                 </form>
@@ -310,7 +308,7 @@ function TravelSection() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full mt-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Button type="submit" className="w-full mt-6">
                     <Search className="mr-2 h-4 w-4" /> Search Accommodations
                   </Button>
                 </form>
