@@ -14,6 +14,7 @@ import {
   Star,
   ArrowRight,
   Info,
+  PlusCircle,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -218,18 +219,19 @@ function PricingSection() {
 
                  <div className="mt-20">
                     <h3 className="text-2xl font-headline font-bold text-center mb-8">Optional Add-Ons</h3>
-                     <Card className="max-w-2xl mx-auto border-dashed">
-                        <CardContent className="p-6">
-                            <ul className="divide-y divide-dashed">
-                                {addOns.map((addOn, index) => (
-                                    <li key={index} className="flex justify-between items-center py-3">
-                                        <span className="text-muted-foreground">{addOn.name}</span>
-                                        <span className="font-semibold">{addOn.price}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                     </Card>
+                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        {addOns.map((addOn, index) => (
+                            <Card key={index} className="bg-secondary/50">
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <PlusCircle className="size-5 text-primary"/>
+                                        <span className="font-medium text-secondary-foreground">{addOn.name}</span>
+                                    </div>
+                                    <span className="font-semibold font-headline text-lg">{addOn.price}</span>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>
@@ -386,69 +388,74 @@ function AppointmentSection() {
     <section id="appointments" className="py-20 lg:py-28 bg-card">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-headline font-bold">Book Your Consultation</h2>
+          <h2 className="text-3xl md:text-4xl font-headline font-bold">Book Your Free Consultation</h2>
           <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
             Select a date and time to speak with one of our Canadian visa experts.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start max-w-5xl mx-auto">
-          <Card className="shadow-lg w-full">
-            <CardContent className="p-4 md:p-6 flex justify-center">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md"
-                disabled={(day) => day < new Date(new Date().setDate(new Date().getDate() - 1))}
-              />
-            </CardContent>
-          </Card>
-          <div className="space-y-4">
-             <h3 className="font-headline font-semibold text-xl text-center md:text-left">
-                Available Slots for {date ? date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '...'}
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {timeSlots.map((time) => (
-                <Button
-                  key={time}
-                  variant="outline"
-                  onClick={() => handleTimeSelect(time)}
-                  className="py-6 text-base"
-                >
-                  <Clock className="mr-2 h-4 w-4" />
-                  {time}
-                </Button>
-              ))}
+        <Card className="max-w-6xl mx-auto shadow-lg overflow-hidden">
+            <div className="grid md:grid-cols-2">
+                 <div className="p-6 border-b md:border-b-0 md:border-r">
+                    <h3 className="font-headline font-semibold text-xl text-center md:text-left mb-4">
+                        1. Select a Date
+                    </h3>
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            className="rounded-md"
+                            disabled={(day) => day < new Date(new Date().setDate(new Date().getDate() - 1))}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-6">
+                    <h3 className="font-headline font-semibold text-xl text-center md:text-left mb-4">
+                        2. Select a Time Slot
+                    </h3>
+                    <p className="text-sm text-muted-foreground text-center md:text-left mb-4">
+                        Available slots for {date ? date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '...'}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {timeSlots.map((time) => (
+                            <Button
+                            key={time}
+                            variant="outline"
+                            onClick={() => handleTimeSelect(time)}
+                            className="py-6 text-base"
+                            >
+                            <Clock className="mr-2 h-4 w-4" />
+                            {time}
+                            </Button>
+                        ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center md:text-left pt-4">All times are in your local timezone.</p>
+                </div>
             </div>
-             <p className="text-sm text-muted-foreground text-center md:text-left pt-2">All times are in your local timezone.</p>
-          </div>
-        </div>
+        </Card>
       </div>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="font-headline">Confirm Your Booking</DialogTitle>
             <DialogDescription>
-              You are booking a consultation for {date?.toLocaleDateString()} at {selectedTime}.
+              You are booking a consultation for {date?.toLocaleDateString()} at {selectedTime}. Please provide your details below.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleBookingSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input id="name" required className="col-span-3" placeholder="Jane Doe" />
+            <div className="grid gap-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" required placeholder="Jane Doe" className="h-11"/>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input id="email" type="email" required className="col-span-3" placeholder="jane.doe@example.com" />
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input id="email" type="email" required placeholder="jane.doe@example.com" className="h-11" />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full">Confirm Booking</Button>
+              <Button type="submit" size="lg" className="w-full">Confirm Booking</Button>
             </DialogFooter>
           </form>
         </DialogContent>
