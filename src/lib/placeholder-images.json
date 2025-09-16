@@ -1,3 +1,11 @@
+
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-students",
+      "description": "Happy international students celebrating their successful visa applications.",
+      "imageUrl": "https://picsum.photos/seed/visapilot-hero/1200/800",
+      "imageHint": "happy students"
+    }
+  ]
 }
