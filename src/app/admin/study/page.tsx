@@ -19,8 +19,7 @@ export default function StudyAdminPage() {
   return (
     <div className="space-y-6">
         <h1 className="text-3xl font-headline font-bold">Study & Visa Administration</h1>
-        <p className="text-muted-foreground">Manage student resources, view visa application analytics, and configure consultation settings.</p>
-
+        
         <Card>
             <CardHeader>
                 <CardTitle>Resource Management</CardTitle>
