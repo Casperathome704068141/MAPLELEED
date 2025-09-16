@@ -12,6 +12,8 @@ import {
   Sparkles,
   Award,
   Star,
+  ArrowRight,
+  Info,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +27,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
@@ -85,7 +89,9 @@ function PricingSection() {
                 "Appointment booking with visa experts",
                 "Receipt generation for records",
             ],
-            cta: "Book a Consultation",
+            cta: "Get Started",
+            fullDescription: "The Standard Tier is designed for students who need expert guidance to kickstart their Canadian study permit application. You get a full hour with a visa expert to ask questions, understand the process, and receive a clear roadmap. We'll help you book the appointment and provide a receipt for your records.",
+            limitations: "This plan does not include application form filling, SOP/LOE writing, or direct communication with IRCC on your behalf."
         },
         {
             name: "Premium",
@@ -101,6 +107,8 @@ function PricingSection() {
             ],
             cta: "Choose Premium",
             highlight: true,
+            fullDescription: "Our most popular package, the Premium Tier, offers comprehensive support throughout your application journey. In addition to the expert consultation, we assist with the critical components of your application, including your Statement of Purpose and college applications. We'll also track your IRCC status and provide priority support until you receive a decision.",
+            limitations: "This plan covers support for up to 3 college program applications. It does not include the final submission of the study permit application to IRCC or post-arrival services."
         },
         {
             name: "Ultimate",
@@ -116,6 +124,8 @@ function PricingSection() {
                 "SIM card & banking setup",
             ],
             cta: "Go Ultimate",
+            fullDescription: "The Ultimate Tier is our 'white glove' service for students who want a completely stress-free experience. We handle everything from start to finish: filing your study permit application, booking necessary appointments, arranging your travel and accommodation, and even helping you get settled in Canada with airport pickup and essential setups. This is the all-inclusive package for total peace of mind.",
+            limitations: "The cost of flights, accommodation, and third-party services (e.g., biometrics fees, tuition) are not included in the package price. Service fees for booking are covered."
         },
     ];
 
@@ -141,27 +151,68 @@ function PricingSection() {
 
                 <div className="grid lg:grid-cols-3 gap-8 items-stretch">
                     {tiers.map((tier) => (
-                        <Card key={tier.name} className={`flex flex-col ${tier.highlight ? 'border-primary ring-2 ring-primary shadow-2xl' : 'shadow-lg'}`}>
-                            <CardHeader className="text-center pb-4">
-                                <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4 text-primary">{tier.icon}</div>
-                                <CardTitle className="font-headline text-3xl">{tier.name}</CardTitle>
-                                <CardDescription className="text-base mt-2">{tier.description}</CardDescription>
-                                <p className="text-4xl font-bold font-headline pt-4">{tier.price}</p>
-                            </CardHeader>
-                            <CardContent className="flex-grow flex flex-col justify-between pt-4">
-                                <ul className="space-y-3 mb-8 text-left">
-                                    {tier.features.map((feature, index) => (
-                                        <li key={index} className="flex items-start">
-                                            <Check className="w-5 h-5 mr-3 text-primary shrink-0 mt-1" />
-                                            <span className="text-muted-foreground">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <Button asChild size="lg" className="w-full mt-auto" variant={tier.highlight ? 'default' : 'outline'}>
-                                    <a href="#appointments">{tier.cta}</a>
-                                </Button>
-                            </CardContent>
-                        </Card>
+                         <Dialog key={tier.name}>
+                            <Card className={`flex flex-col ${tier.highlight ? 'border-primary ring-2 ring-primary shadow-2xl' : 'shadow-lg'}`}>
+                                <CardHeader className="text-center pb-4">
+                                    <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4 text-primary">{tier.icon}</div>
+                                    <CardTitle className="font-headline text-3xl">{tier.name}</CardTitle>
+                                    <CardDescription className="text-base mt-2">{tier.description}</CardDescription>
+                                    <p className="text-4xl font-bold font-headline pt-4">{tier.price}</p>
+                                </CardHeader>
+                                <CardContent className="flex-grow flex flex-col justify-between pt-4">
+                                    <ul className="space-y-3 mb-8 text-left">
+                                        {tier.features.map((feature, index) => (
+                                            <li key={index} className="flex items-start">
+                                                <Check className="w-5 h-5 mr-3 text-primary shrink-0 mt-1" />
+                                                <span className="text-muted-foreground">{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                     <DialogTrigger asChild>
+                                        <Button size="lg" className="w-full mt-auto" variant={tier.highlight ? 'default' : 'outline'}>
+                                            <Info className="mr-2" /> Learn More
+                                        </Button>
+                                    </DialogTrigger>
+                                </CardContent>
+                            </Card>
+                             <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <div className="flex items-center gap-4 mb-4">
+                                         <div className="p-3 bg-primary/10 rounded-full w-fit text-primary">{tier.icon}</div>
+                                         <DialogTitle className="font-headline text-2xl">{tier.name} Tier</DialogTitle>
+                                    </div>
+                                    <DialogDescription className="text-base">
+                                        {tier.fullDescription}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4">
+                                    <div>
+                                        <h4 className="font-semibold mb-2">What's Included:</h4>
+                                        <ul className="space-y-2">
+                                            {tier.features.map((feature, index) => (
+                                                <li key={index} className="flex items-start">
+                                                    <Check className="w-4 h-4 mr-3 text-primary shrink-0 mt-1" />
+                                                    <span className="text-sm text-muted-foreground">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold mb-2">Limitations:</h4>
+                                        <p className="text-sm text-muted-foreground italic">{tier.limitations}</p>
+                                    </div>
+                                </div>
+                                <DialogFooter className="sm:justify-start">
+                                    <DialogClose asChild>
+                                         <Button asChild size="lg" variant={tier.highlight ? 'default' : 'outline'}>
+                                            <a href="#appointments">
+                                                Book Consultation <ArrowRight className="ml-2" />
+                                            </a>
+                                        </Button>
+                                    </DialogClose>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     ))}
                 </div>
 
@@ -420,5 +471,3 @@ export default function StudyPage() {
     </div>
   );
 }
-
-    
