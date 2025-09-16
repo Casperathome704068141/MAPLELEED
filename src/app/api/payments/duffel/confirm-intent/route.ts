@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const { payment_intent_id } = (await request.json()) as Body;
 
   try {
-    const confirmed = await duffel.payments.paymentIntents.confirm(payment_intent_id);
+    const confirmed = await (duffel as any).payments.paymentIntents.confirm(payment_intent_id);
     return NextResponse.json({ status: confirmed.data.status });
   } catch (e: any) {
     console.error(e);

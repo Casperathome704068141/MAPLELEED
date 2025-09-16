@@ -8,8 +8,10 @@ type Body = {
   currency: string;
   payment_intent_id: string;
   passengers: Array<{
-    title: 'mr' | 'ms' | 'mrs' | 'miss' | 'mx';
-    gender: 'm' | 'f' | 'u';
+    id: string;
+    type: 'adult' | 'child' | 'infant_without_seat';
+    title: 'mr' | 'ms' | 'mrs';
+    gender: 'm' | 'f';
     given_name: string;
     family_name: string;
     born_on: string;
@@ -40,7 +42,6 @@ export async function POST(request: Request) {
       order_id: order.data.id,
       booking_reference: order.data.booking_reference,
       documents: order.data.documents,
-      status: order.data.status,
     });
   } catch (e: any) {
     console.error(e);
