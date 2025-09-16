@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -77,7 +78,7 @@ function PricingSection() {
             name: "Standard",
             price: "$145",
             description: "Entry-level support for a confident start.",
-            icon: <Sparkles />,
+            icon: <Sparkles className="size-6"/>,
             features: [
                 "Full 1-hour expert consultation",
                 "Guidance on required documents & timelines",
@@ -90,7 +91,7 @@ function PricingSection() {
             name: "Premium",
             price: "$350",
             description: "The most popular choice for comprehensive support.",
-            icon: <Award />,
+            icon: <Award className="size-6"/>,
             features: [
                 "Everything in Standard",
                 "SOP or Letter of Explanation (LOE) writing support",
@@ -105,7 +106,7 @@ function PricingSection() {
             name: "Ultimate",
             price: "$850",
             description: "The zero-stress, all-inclusive package.",
-            icon: <Star />,
+            icon: <Star className="size-6"/>,
             features: [
                 "Everything in Premium",
                 "End-to-end study permit application filing",
@@ -141,22 +142,22 @@ function PricingSection() {
                 <div className="grid lg:grid-cols-3 gap-8 items-stretch">
                     {tiers.map((tier) => (
                         <Card key={tier.name} className={`flex flex-col ${tier.highlight ? 'border-primary ring-2 ring-primary shadow-2xl' : 'shadow-lg'}`}>
-                            <CardHeader className="text-center">
+                            <CardHeader className="text-center pb-4">
                                 <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4 text-primary">{tier.icon}</div>
                                 <CardTitle className="font-headline text-3xl">{tier.name}</CardTitle>
-                                <CardDescription className="text-base">{tier.description}</CardDescription>
+                                <CardDescription className="text-base mt-2">{tier.description}</CardDescription>
                                 <p className="text-4xl font-bold font-headline pt-4">{tier.price}</p>
                             </CardHeader>
-                            <CardContent className="flex-grow flex flex-col justify-between">
-                                <ul className="space-y-3 mb-8">
+                            <CardContent className="flex-grow flex flex-col justify-between pt-4">
+                                <ul className="space-y-3 mb-8 text-left">
                                     {tier.features.map((feature, index) => (
                                         <li key={index} className="flex items-start">
-                                            <Check className="w-5 h-5 mr-2 text-primary shrink-0 mt-1" />
+                                            <Check className="w-5 h-5 mr-3 text-primary shrink-0 mt-1" />
                                             <span className="text-muted-foreground">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
-                                <Button asChild size="lg" className="w-full" variant={tier.highlight ? 'default' : 'outline'}>
+                                <Button asChild size="lg" className="w-full mt-auto" variant={tier.highlight ? 'default' : 'outline'}>
                                     <a href="#appointments">{tier.cta}</a>
                                 </Button>
                             </CardContent>
@@ -164,11 +165,11 @@ function PricingSection() {
                     ))}
                 </div>
 
-                 <div className="mt-16">
+                 <div className="mt-20">
                     <h3 className="text-2xl font-headline font-bold text-center mb-8">Optional Add-Ons</h3>
-                     <Card className="max-w-2xl mx-auto">
+                     <Card className="max-w-2xl mx-auto border-dashed">
                         <CardContent className="p-6">
-                            <ul className="divide-y">
+                            <ul className="divide-y divide-dashed">
                                 {addOns.map((addOn, index) => (
                                     <li key={index} className="flex justify-between items-center py-3">
                                         <span className="text-muted-foreground">{addOn.name}</span>
@@ -187,19 +188,25 @@ function PricingSection() {
 function SearchSubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} size="lg">
+    <Button type="submit" disabled={pending} size="lg" className="shrink-0">
       {pending ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Searching...
+        </>
       ) : (
-        <Search className="mr-2 h-4 w-4" />
+        <>
+          <Search className="mr-2 h-4 w-4" />
+          Find Options
+        </>
       )}
-      Find Options
     </Button>
   );
 }
 
 function CourseFinderSection() {
     const [state, formAction] = useFormState(handleFindStudyOptions, initialStudyState);
+    const { pending } = useFormStatus();
 
     return (
         <section id="course-finder" className="py-20 lg:py-28 bg-secondary/30">
@@ -212,7 +219,7 @@ function CourseFinderSection() {
                 </div>
                 <Card className="max-w-3xl mx-auto shadow-lg">
                     <CardContent className="p-6">
-                        <form action={formAction} className="flex flex-col md:flex-row items-center gap-4">
+                        <form action={formAction} className="flex flex-col sm:flex-row items-center gap-4">
                             <Input 
                                 name="query"
                                 id="query"
@@ -228,7 +235,7 @@ function CourseFinderSection() {
                     </CardContent>
                 </Card>
 
-                {useFormStatus().pending && (
+                {pending && (
                      <div className="mt-12 text-center">
                         <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         <p className="mt-4 text-muted-foreground">Our AI is searching for the best options for you...</p>
@@ -239,7 +246,7 @@ function CourseFinderSection() {
                     <StudyResults results={state.data} />
                 )}
 
-                {state.message && state.message !== 'success' && (
+                {state.message && state.message !== 'success' && !pending && (
                      <Alert variant="destructive" className="mt-12 max-w-3xl mx-auto">
                         <AlertTitle>Search Failed</AlertTitle>
                         <AlertDescription>{state.message}</AlertDescription>
@@ -267,8 +274,8 @@ function StudyResults({ results }: { results: FindStudyOptionsOutput }) {
         <div className="mt-12 max-w-5xl mx-auto space-y-8">
             <h3 className="text-2xl font-headline font-bold text-center">Your Suggested Study Options</h3>
             {results.options.map((uni, uniIndex) => (
-                <Card key={uniIndex} className="overflow-hidden">
-                    <CardHeader className="bg-secondary/50">
+                <Card key={uniIndex} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                    <CardHeader className="bg-secondary/50 border-b">
                         <CardTitle className="font-headline">{uni.name}</CardTitle>
                         <CardDescription>{uni.city}, {uni.country}</CardDescription>
                     </CardHeader>
@@ -276,14 +283,14 @@ function StudyResults({ results }: { results: FindStudyOptionsOutput }) {
                          <Accordion type="single" collapsible className="w-full">
                             {uni.courses.map((course, courseIndex) => (
                                 <AccordionItem value={`course-${courseIndex}`} key={courseIndex} className={courseIndex === uni.courses.length - 1 ? 'border-b-0' : ''}>
-                                    <AccordionTrigger className="px-6 py-4 text-base font-semibold hover:bg-muted/50">
-                                       <div className="flex flex-col md:flex-row items-start md:items-center text-left gap-2">
-                                         <span className="font-headline">{course.name}</span>
-                                         <span className="text-sm font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">{course.level}</span>
+                                    <AccordionTrigger className="px-6 py-4 text-base hover:bg-muted/50 transition-colors">
+                                       <div className="flex flex-col md:flex-row items-start md:items-center text-left gap-x-4 gap-y-1">
+                                         <span className="font-headline text-primary">{course.name}</span>
+                                         <span className="text-sm font-medium text-secondary-foreground bg-secondary px-2 py-1 rounded-md">{course.level}</span>
                                        </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="px-6 pb-6 pt-0">
-                                        <p className="text-muted-foreground">{course.description}</p>
+                                        <p className="text-muted-foreground prose prose-sm">{course.description}</p>
                                     </AccordionContent>
                                 </AccordionItem>
                             ))}
@@ -333,8 +340,8 @@ function AppointmentSection() {
             Select a date and time to speak with one of our Canadian visa experts.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
-          <Card className="shadow-lg">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start max-w-5xl mx-auto">
+          <Card className="shadow-lg w-full">
             <CardContent className="p-4 md:p-6 flex justify-center">
               <Calendar
                 mode="single"
@@ -362,6 +369,7 @@ function AppointmentSection() {
                 </Button>
               ))}
             </div>
+             <p className="text-sm text-muted-foreground text-center md:text-left pt-2">All times are in your local timezone.</p>
           </div>
         </div>
       </div>
@@ -370,7 +378,7 @@ function AppointmentSection() {
           <DialogHeader>
             <DialogTitle className="font-headline">Confirm Your Booking</DialogTitle>
             <DialogDescription>
-              You're booking a consultation for {date?.toLocaleDateString()} at {selectedTime}.
+              You are booking a consultation for {date?.toLocaleDateString()} at {selectedTime}.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleBookingSubmit}>
@@ -412,3 +420,5 @@ export default function StudyPage() {
     </div>
   );
 }
+
+    
