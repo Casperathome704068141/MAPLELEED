@@ -23,11 +23,13 @@ export async function POST(request: Request) {
   } = (await request.json()) as Body;
 
   try {
+    const slices = [
+      { origin, destination, departure_date: departureDate },
+      ...(returnDate ? [{ origin: destination, destination: origin, departure_date: returnDate }] : []),
+    ] as any;
+
     const offerRequest = await duffel.offerRequests.create({
-      slices: [
-        { origin, destination, departure_date: departureDate },
-        ...(returnDate ? [{ origin: destination, destination: origin, departure_date: returnDate }] : []),
-      ],
+      slices,
       passengers: Array.from({ length: Number(adults) }, () => ({ type: 'adult' })),
       cabin_class,
       return_offers: true,

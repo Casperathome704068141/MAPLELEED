@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const { final_amount, currency } = (await request.json()) as Body;
 
   try {
-    const intent = await duffel.payments.paymentIntents.create({
+    const intent = await (duffel as any).payments.paymentIntents.create({
       amount: final_amount.toFixed(2),
       currency,
     });

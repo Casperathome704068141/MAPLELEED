@@ -1,17 +1,25 @@
-
 'use client';
 
 import type { FlightOffer, FlightSlice } from '@/lib/duffel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { DuffelAncillaries, DuffelCardForm, DuffelNext } from '@duffel/components';
+import DuffelComponents from '@duffel/components';
+import type { CardPaymentProps } from '@duffel/components';
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { DurationFormatter, TimeFormatter } from './formatters';
-import { ArrowRight, Info, Loader2, Plane, User } from 'lucide-react';
-import { DUFFEL_CURRENCY } from '@/lib/duffel';
+import {
+  ArrowRight,
+  Info,
+  Loader2,
+  Plane,
+  Plus,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,10 +31,87 @@ import {
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Badge } from './ui/badge';
 
-const isDuffelComponentsCssAdded = () => {
-  return !![...document.getElementsByTagName('link')].find(
-    (l) => l.href === 'https://assets.duffel.com/components/v2/main.css'
+type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
+
+export type FlightSearchDetails = {
+  origin: string;
+  destination: string;
+  departureDate: string;
+  returnDate?: string | null;
+  adults: number;
+  cabinClass: CabinClass;
+  tripType: 'one-way' | 'return';
+};
+
+type Passenger = {
+  title: 'mr' | 'ms' | 'mrs';
+  gender: 'm' | 'f';
+  given_name: string;
+  family_name: string;
+  born_on: string;
+  email: string;
+  phone_number: string;
+  type: 'adult' | 'child' | 'infant_without_seat';
+};
+
+const passengerInitialState: Passenger = {
+  title: 'mr',
+  gender: 'm',
+  given_name: '',
+  family_name: '',
+  born_on: '',
+  email: '',
+  phone_number: '',
+  type: 'adult',
+};
+
+const { CardPayment } = DuffelComponents as {
+  CardPayment: React.FC<CardPaymentProps>;
+};
+
+const formatCurrency = (amount: number, currency: string) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+
+const formatCabin = (cabin?: string | null) =>
+  cabin
+    ? cabin
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : 'Economy';
+
+const CarrierLogo = ({
+  name,
+  logoUrl,
+}: {
+  name: string;
+  logoUrl: string | null;
+}) => {
+  if (logoUrl) {
+    return (
+      <Image
+        src={logoUrl}
+        alt={name}
+        width={32}
+        height={32}
+        className="rounded-full border bg-white object-contain"
+      />
+    );
+  }
+
+  const initials = name
+    .split(' ')
+    .map((part) => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full border bg-secondary text-xs font-semibold uppercase text-secondary-foreground">
+      {initials}
+    </div>
   );
 };
 
@@ -36,39 +121,60 @@ const SliceDetails = ({ slice }: { slice: FlightSlice }) => {
   const lastSegment = slice.segments[slice.segments.length - 1];
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <div className="flex items-center gap-4 flex-1">
-        <Image
-          src={firstSegment.operating_carrier.logo_symbol_url!}
-          alt={firstSegment.operating_carrier.name}
-          width={32}
-          height={32}
-          className="rounded-full"
-        />
-        <div className="flex items-center gap-4 font-mono text-sm">
-          <div>
-            <TimeFormatter time={firstSegment.departing_at} />
-            <div className="text-xs text-muted-foreground">{firstSegment.origin.iata_code}</div>
-          </div>
-          <div className="text-center">
-            <DurationFormatter duration={slice.duration} />
-            <div className="h-px w-16 bg-border" />
-            <div className="text-xs text-muted-foreground">{stops === 0 ? 'Direct' : `${stops} stop`}</div>
-          </div>
-          <div>
-            <TimeFormatter time={lastSegment.arriving_at} />
-            <div className="text-xs text-muted-foreground">{lastSegment.destination.iata_code}</div>
+    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center gap-4">
+          <CarrierLogo
+            name={firstSegment.operating_carrier.name}
+            logoUrl={firstSegment.operating_carrier.logo_symbol_url}
+          />
+          <div className="flex flex-wrap items-center gap-6 font-mono text-sm">
+            <div>
+              <TimeFormatter time={firstSegment.departing_at} />
+              <div className="text-xs text-muted-foreground">
+                {firstSegment.origin.iata_code}
+              </div>
+            </div>
+            <div className="text-center">
+              <DurationFormatter duration={slice.duration} />
+              <div className="h-px w-16 bg-border" />
+              <div className="text-xs text-muted-foreground">
+                {stops === 0 ? 'Direct' : `${stops} stop${stops > 1 ? 's' : ''}`}
+              </div>
+            </div>
+            <div>
+              <TimeFormatter time={lastSegment.arriving_at} />
+              <div className="text-xs text-muted-foreground">
+                {lastSegment.destination.iata_code}
+              </div>
+            </div>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span>Operated by {firstSegment.operating_carrier.name}</span>
+          <span className="hidden h-1 w-1 rounded-full bg-muted-foreground md:inline-block" />
+          <span>
+            {format(new Date(firstSegment.departing_at), 'eee, MMM d, yyyy')}
+          </span>
+        </div>
       </div>
-      <div className="text-sm text-muted-foreground shrink-0">{firstSegment.operating_carrier.name}</div>
     </div>
   );
 };
 
-export const FlightResults = ({ offers }: { offers: FlightOffer[] }) => {
+export const FlightResults = ({
+  offers,
+  searchDetails,
+}: {
+  offers: FlightOffer[];
+  searchDetails?: FlightSearchDetails;
+}) => {
   const [selectedOffer, setSelectedOffer] = React.useState<FlightOffer | null>(null);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    setSelectedOffer(null);
+  }, [offers]);
 
   const handleBookingSuccess = (data: any) => {
     toast({
@@ -86,42 +192,133 @@ export const FlightResults = ({ offers }: { offers: FlightOffer[] }) => {
     });
   };
 
+  const passengerCountForOffer = React.useCallback(
+    (offer: FlightOffer) =>
+      searchDetails?.adults ??
+      offer.slices[0]?.segments[0]?.passengers?.length ??
+      1,
+    [searchDetails?.adults]
+  );
+
+  const summaryDeparture = searchDetails?.departureDate
+    ? format(parseISO(searchDetails.departureDate), 'eee, MMM d, yyyy')
+    : null;
+  const summaryReturn = searchDetails?.returnDate
+    ? format(parseISO(searchDetails.returnDate), 'eee, MMM d, yyyy')
+    : null;
+
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
-      <h2 className="text-3xl font-headline font-bold text-center">Your Flight Results</h2>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="space-y-2 text-center">
+        <h2 className="text-3xl font-headline font-bold">Your Flight Results</h2>
+        <p className="text-muted-foreground">
+          All fares shown include our service fee and Duffel payment processing so you can check out securely.
+        </p>
+      </div>
 
-      {offers.map((offer) => (
-        <Card key={offer.offer_id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-          <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-grow w-full space-y-3">
-              {offer.slices.map((slice, index) => (
-                <SliceDetails key={index} slice={slice} />
-              ))}
+      {searchDetails && (
+        <div className="rounded-lg border bg-card/60 p-5 text-left shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                {searchDetails.tripType === 'return' ? 'Return trip' : 'One-way trip'}
+              </p>
+              <h3 className="text-xl font-semibold">
+                {searchDetails.origin.toUpperCase()} → {searchDetails.destination.toUpperCase()}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Depart {summaryDeparture}
+                {searchDetails.tripType === 'return' && summaryReturn
+                  ? ` • Return ${summaryReturn}`
+                  : ''}
+              </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">
+                <Users className="mr-1 h-4 w-4" /> {searchDetails.adults}{' '}
+                {searchDetails.adults === 1 ? 'traveller' : 'travellers'}
+              </Badge>
+              <Badge variant="secondary">
+                {formatCabin(searchDetails.cabinClass)} cabin
+              </Badge>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Showing {offers.length} option{offers.length === 1 ? '' : 's'} sourced live from Duffel.
+          </p>
+        </div>
+      )}
 
-            <div className="w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between gap-2 shrink-0 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold font-headline">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: offer.currency }).format(
-                    offer.final_amount
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total for {offer.slices[0].segments[0].passengers?.length || 1} passenger
-                  {offer.slices[0].segments[0].passengers?.length > 1 ? 's' : ''}
-                </p>
+      {offers.map((offer) => {
+        const travellerCount = passengerCountForOffer(offer);
+        const perTraveller = formatCurrency(
+          +(offer.final_amount / travellerCount).toFixed(2),
+          offer.currency
+        );
+        const cabinLabel = formatCabin(
+          offer.slices[0]?.segments[0]?.passengers?.[0]?.cabin_class ?? searchDetails?.cabinClass
+        );
+
+        return (
+          <Card
+            key={offer.offer_id}
+            className="overflow-hidden border-border/70 shadow-md transition-shadow hover:shadow-lg"
+          >
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-start">
+              <div className="flex w-full flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  <CarrierLogo name={offer.owner.name} logoUrl={offer.owner.logo_symbol_url} />
+                  <div>
+                    <p className="font-medium text-foreground">{offer.owner.name}</p>
+                    <p className="text-xs uppercase tracking-wide">Offer {offer.offer_id.slice(0, 8)}</p>
+                  </div>
+                  <Badge variant="outline" className="ml-auto">
+                    {cabinLabel}
+                  </Badge>
+                </div>
+                <div className="space-y-3">
+                  {offer.slices.map((slice, index) => (
+                    <SliceDetails key={index} slice={slice} />
+                  ))}
+                </div>
               </div>
-              <Button onClick={() => setSelectedOffer(offer)}>
-                Select Flight <ArrowRight className="ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+
+              <div className="flex w-full flex-row items-center justify-between gap-4 border-t pt-4 md:w-auto md:flex-col md:items-end md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                <div className="text-right">
+                  <p className="text-2xl font-headline font-bold">
+                    {formatCurrency(offer.final_amount, offer.currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Includes {formatCurrency(offer.base_amount, offer.currency)} base fare
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {perTraveller} per traveller · {travellerCount}{' '}
+                    {travellerCount === 1 ? 'passenger' : 'passengers'}
+                  </p>
+                </div>
+                <Button onClick={() => setSelectedOffer(offer)}>
+                  Review &amp; pay <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {offers.length === 0 && (
+        <Alert className="mx-auto max-w-2xl">
+          <Info className="h-4 w-4" />
+          <AlertTitle>No flights found</AlertTitle>
+          <AlertDescription>
+            We couldn't find any flights for the selected route and dates. Please try a different search.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {selectedOffer && (
         <BookingDialog
           offer={selectedOffer}
+          passengerCount={passengerCountForOffer(selectedOffer)}
           onOpenChange={(isOpen) => !isOpen && setSelectedOffer(null)}
           onBookingSuccess={handleBookingSuccess}
           onBookingError={handleBookingError}
@@ -131,39 +328,45 @@ export const FlightResults = ({ offers }: { offers: FlightOffer[] }) => {
   );
 };
 
-const passengerInitialState = {
-  title: 'mr' as const,
-  gender: 'm' as const,
-  given_name: '',
-  family_name: '',
-  born_on: '',
-  email: '',
-  phone_number: '',
-};
-
-type Passenger = typeof passengerInitialState;
-
-const BookingDialog = ({
-  offer,
-  onOpenChange,
-  onBookingSuccess,
-  onBookingError,
-}: {
+type BookingDialogProps = {
   offer: FlightOffer;
+  passengerCount: number;
   onOpenChange: (isOpen: boolean) => void;
   onBookingSuccess: (data: any) => void;
   onBookingError: (error: any) => void;
-}) => {
+};
+
+const BookingDialog = ({
+  offer,
+  passengerCount,
+  onOpenChange,
+  onBookingSuccess,
+  onBookingError,
+}: BookingDialogProps) => {
   const [passengers, setPassengers] = React.useState<Passenger[]>([passengerInitialState]);
-  const [paymentIntentClientToken, setPaymentIntentClientToken] = React.useState('');
+  const [paymentIntent, setPaymentIntent] = React.useState<{
+    id: string;
+    clientToken: string;
+  } | null>(null);
   const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const maxPassengers = 6;
 
   React.useEffect(() => {
+    setPassengers(
+      Array.from({ length: Math.max(passengerCount, 1) }, () => ({
+        ...passengerInitialState,
+      }))
+    );
+  }, [offer, passengerCount]);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
     const createPaymentIntent = async () => {
       setIsCreatingPaymentIntent(true);
       setError(null);
+      setPaymentIntent(null);
       try {
         const res = await fetch('/api/payments/duffel/create-intent', {
           method: 'POST',
@@ -172,6 +375,7 @@ const BookingDialog = ({
             final_amount: offer.final_amount,
             currency: offer.currency,
           }),
+          signal: controller.signal,
         });
 
         if (!res.ok) {
@@ -180,21 +384,26 @@ const BookingDialog = ({
         }
 
         const data = await res.json();
-        setPaymentIntentClientToken(data.client_token);
+        setPaymentIntent({
+          id: data.payment_intent_id,
+          clientToken: data.client_token,
+        });
       } catch (err: any) {
-        setError(err.message);
+        if (err.name === 'AbortError') return;
+        setError(err.message ?? 'Failed to initialize payment');
       } finally {
         setIsCreatingPaymentIntent(false);
       }
     };
+
     createPaymentIntent();
+    return () => controller.abort();
   }, [offer]);
 
   const onSuccessfulPayment = async (paymentIntentId: string) => {
     setIsBooking(true);
     setError(null);
     try {
-      // Duffel test mode requires server-side confirmation
       const confirmRes = await fetch('/api/payments/duffel/confirm-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +420,11 @@ const BookingDialog = ({
         throw new Error('Payment was not successful.');
       }
 
-      // Create the order
+      const passengerPayload = passengers.map((p, index) => ({
+        ...p,
+        id: `passenger-${index + 1}`,
+      }));
+
       const bookRes = await fetch('/api/flights/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -220,7 +433,7 @@ const BookingDialog = ({
           base_amount: offer.base_amount,
           currency: offer.currency,
           payment_intent_id: paymentIntentId,
-          passengers,
+          passengers: passengerPayload,
         }),
       });
 
@@ -239,139 +452,318 @@ const BookingDialog = ({
     }
   };
 
-  const isFormValid = passengers.every(p => 
-    p.given_name && p.family_name && p.born_on && p.email && p.phone_number
+  const isFormValid =
+    passengers.length > 0 &&
+    passengers.every(
+      (p) =>
+        p.given_name &&
+        p.family_name &&
+        p.born_on &&
+        p.email &&
+        p.phone_number
+    );
+
+  const cabinLabel = formatCabin(
+    offer.slices[0]?.segments[0]?.passengers?.[0]?.cabin_class
   );
 
+  const addPassenger = () => {
+    setPassengers((prev) =>
+      prev.length >= maxPassengers ? prev : [...prev, { ...passengerInitialState }]
+    );
+  };
+
+  const removePassenger = (index: number) => {
+    setPassengers((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
-    <DuffelNext>
-      <Dialog open={true} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-2xl">Complete Your Booking</DialogTitle>
-            <DialogDescription>
-              Confirm passenger details and complete payment for your flight.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog
+      open={true}
+      onOpenChange={(isOpen) => {
+        if (!isBooking) {
+          onOpenChange(isOpen);
+        }
+      }}
+    >
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-headline">Complete Your Booking</DialogTitle>
+          <DialogDescription>
+            Confirm passenger details and pay securely to lock in this fare.
+          </DialogDescription>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted-foreground">
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {passengers.length} {passengers.length === 1 ? 'passenger' : 'passengers'}
+            </Badge>
+            <Badge variant="outline">{cabinLabel}</Badge>
+          </div>
+        </DialogHeader>
 
-          <div className="flex-grow overflow-y-auto pr-2 -mr-6 pl-6">
-            <div className="space-y-4 my-4">
-              {offer.slices.map((slice, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 rounded-md bg-secondary">
-                  <Plane className="size-5 text-primary"/>
-                  <div>
-                    <p className="font-medium">
-                      {slice.segments[0].origin.city_name} to {slice.segments[slice.segments.length - 1].destination.city_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(slice.segments[0].departing_at), 'eee, MMM d')}
-                    </p>
+        <div className="flex-grow overflow-y-auto pr-2 -mr-6 pl-6">
+          <div className="space-y-4 py-4">
+            {offer.slices.map((slice, index) => (
+              <div key={index} className="flex items-center gap-4 rounded-md bg-secondary p-3">
+                <Plane className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">
+                    {slice.segments[0].origin.city_name} to {slice.segments[slice.segments.length - 1].destination.city_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(slice.segments[0].departing_at), 'eee, MMM d')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-headline text-lg font-semibold">
+                <User className="h-5 w-5" />
+                Passenger Details
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addPassenger}
+                disabled={passengers.length >= maxPassengers || isBooking}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Add passenger
+              </Button>
+            </div>
+
+            {passengers.map((passenger, index) => (
+              <PassengerForm
+                key={index}
+                index={index}
+                total={passengers.length}
+                passenger={passenger}
+                setPassenger={(updatedPassenger) => {
+                  setPassengers((prev) => {
+                    const next = [...prev];
+                    next[index] = updatedPassenger;
+                    return next;
+                  });
+                }}
+                onRemove={
+                  passengers.length > 1
+                    ? () => removePassenger(index)
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+
+          <div className="mt-8 space-y-4">
+            <h3 className="font-headline text-lg font-semibold">Payment</h3>
+            {isCreatingPaymentIntent && (
+              <div className="flex h-40 flex-col items-center justify-center space-y-2 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p>Initializing secure payment...</p>
+              </div>
+            )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {paymentIntent && !isCreatingPaymentIntent && (
+              <>
+                {!isFormValid && (
+                  <Alert>
+                    <AlertTitle>Complete passenger details</AlertTitle>
+                    <AlertDescription>
+                      Enter required passenger information to enable the payment form.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {isFormValid && CardPayment && (
+                  <div className="rounded-lg border p-4">
+                    <CardPayment
+                      key={paymentIntent.id}
+                      duffelPaymentIntentClientToken={paymentIntent.clientToken}
+                      successfulPaymentHandler={() => onSuccessfulPayment(paymentIntent.id)}
+                      errorPaymentHandler={(stripeError) => {
+                        setError(stripeError?.message ?? 'Payment failed');
+                        onBookingError(stripeError);
+                      }}
+                    />
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
 
-            <div className="space-y-6">
-              <h3 className="font-headline font-semibold text-lg flex items-center gap-2"><User /> Passenger Details</h3>
-              {passengers.map((p, index) => (
-                <PassengerForm key={index} passenger={p} setPassenger={(updatedPassenger) => {
-                  const newPassengers = [...passengers];
-                  newPassengers[index] = updatedPassenger;
-                  setPassengers(newPassengers);
-                }} />
-              ))}
+        <DialogFooter className="mt-auto border-t pt-4">
+          <div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="text-sm text-muted-foreground">
+              Charged in {offer.currency}. Includes our $59 service fee and secure Duffel payment processing.
+              {isBooking && (
+                <span className="ml-2 inline-flex items-center gap-1 text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Processing booking…
+                </span>
+              )}
             </div>
-            
-            <div className="mt-8">
-              <h3 className="font-headline font-semibold text-lg">Payment</h3>
-              {isCreatingPaymentIntent && (
-                <div className="flex items-center justify-center h-40">
-                  <Loader2 className="animate-spin text-primary" />
-                  <p className="ml-2 text-muted-foreground">Initializing secure payment...</p>
-                </div>
-              )}
-              {error && (
-                 <Alert variant="destructive" className="my-4">
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              {paymentIntentClientToken && !isCreatingPaymentIntent && (
-                <div className="mt-4">
-                  <DuffelCardForm
-                    paymentIntentClientToken={paymentIntentClientToken}
-                    onSuccess={(data) => onSuccessfulPayment(data.id)}
-                    onError={(err) => {
-                       setError(err.message);
-                       onBookingError(err);
-                    }}
-                    disabled={!isFormValid || isBooking}
-                    amount={offer.final_amount}
-                    currency={offer.currency}
-                  />
-                </div>
-              )}
+            <div className="text-right">
+              <span className="block text-xs uppercase tracking-wide text-muted-foreground">Total price</span>
+              <span className="text-2xl font-headline font-bold">
+                {formatCurrency(offer.final_amount, offer.currency)}
+              </span>
+              <p className="text-xs text-muted-foreground">
+                Base fare {formatCurrency(offer.base_amount, offer.currency)} + service markup
+              </p>
             </div>
           </div>
-          <DialogFooter className="mt-auto pt-4 border-t">
-              <div className="flex justify-between items-center w-full">
-                <span className="text-muted-foreground">Total Price</span>
-                <span className="text-2xl font-bold font-headline">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: offer.currency }).format(
-                        offer.final_amount
-                    )}
-                </span>
-              </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </DuffelNext>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-const PassengerForm = ({ passenger, setPassenger }: { passenger: Passenger, setPassenger: (p: Passenger) => void }) => {
+const PassengerForm = ({
+  passenger,
+  index,
+  total,
+  setPassenger,
+  onRemove,
+}: {
+  passenger: Passenger;
+  index: number;
+  total: number;
+  setPassenger: (passenger: Passenger) => void;
+  onRemove?: () => void;
+}) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setPassenger({ ...passenger, [e.target.name]: e.target.value });
-  }
+  };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border p-4 rounded-lg">
-       <div className="space-y-1">
-        <Label htmlFor="title">Title</Label>
-         <select name="title" value={passenger.title} onChange={handleChange} className="h-10 border-input bg-background w-full rounded-md border px-3 py-2 text-sm">
-          <option value="mr">Mr</option>
-          <option value="ms">Ms</option>
-          <option value="mrs">Mrs</option>
-        </select>
+    <div className="space-y-4 rounded-lg border p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-mono text-xs text-primary">
+            {index + 1}
+          </span>
+          Passenger {index + 1}
+        </div>
+        {onRemove && (
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+            <X className="mr-1 h-4 w-4" /> Remove
+          </Button>
+        )}
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="given_name">First Name</Label>
-        <Input name="given_name" value={passenger.given_name} onChange={handleChange} required placeholder="John" />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <Label htmlFor={`type-${index}`}>Passenger Type</Label>
+          <select
+            id={`type-${index}`}
+            name="type"
+            value={passenger.type}
+            onChange={handleChange}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="adult">Adult (16+)</option>
+            <option value="child">Child (2-15)</option>
+            <option value="infant_without_seat">Infant (on lap)</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`title-${index}`}>Title</Label>
+          <select
+            id={`title-${index}`}
+            name="title"
+            value={passenger.title}
+            onChange={handleChange}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="mr">Mr</option>
+            <option value="ms">Ms</option>
+            <option value="mrs">Mrs</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`gender-${index}`}>Gender</Label>
+          <select
+            id={`gender-${index}`}
+            name="gender"
+            value={passenger.gender}
+            onChange={handleChange}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="m">Male</option>
+            <option value="f">Female</option>
+          </select>
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="family_name">Last Name</Label>
-        <Input name="family_name" value={passenger.family_name} onChange={handleChange} required placeholder="Doe" />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor={`given_name-${index}`}>First Name</Label>
+          <Input
+            id={`given_name-${index}`}
+            name="given_name"
+            value={passenger.given_name}
+            onChange={handleChange}
+            required
+            placeholder="John"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`family_name-${index}`}>Last Name</Label>
+          <Input
+            id={`family_name-${index}`}
+            name="family_name"
+            value={passenger.family_name}
+            onChange={handleChange}
+            required
+            placeholder="Doe"
+          />
+        </div>
       </div>
-       <div className="space-y-1">
-        <Label htmlFor="gender">Gender</Label>
-         <select name="gender" value={passenger.gender} onChange={handleChange} className="h-10 w-full border-input bg-background rounded-md border px-3 py-2 text-sm">
-          <option value="m">Male</option>
-          <option value="f">Female</option>
-          <option value="u">Unspecified</option>
-        </select>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="born_on">Date of Birth</Label>
-        <Input name="born_on" type="date" value={passenger.born_on} onChange={handleChange} required />
-      </div>
-      <div className="space-y-1 col-span-2 md:col-span-1">
-        <Label htmlFor="email">Email</Label>
-        <Input name="email" type="email" value={passenger.email} onChange={handleChange} required placeholder="john.doe@example.com"/>
-      </div>
-      <div className="space-y-1 col-span-2 md:col-span-3">
-        <Label htmlFor="phone_number">Phone Number</Label>
-        <Input name="phone_number" type="tel" value={passenger.phone_number} onChange={handleChange} required placeholder="+14155552671" />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <Label htmlFor={`born_on-${index}`}>Date of Birth</Label>
+          <Input
+            id={`born_on-${index}`}
+            name="born_on"
+            type="date"
+            value={passenger.born_on}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`email-${index}`}>Email</Label>
+          <Input
+            id={`email-${index}`}
+            name="email"
+            type="email"
+            value={passenger.email}
+            onChange={handleChange}
+            required
+            placeholder="john.doe@example.com"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`phone_number-${index}`}>Phone Number</Label>
+          <Input
+            id={`phone_number-${index}`}
+            name="phone_number"
+            type="tel"
+            value={passenger.phone_number}
+            onChange={handleChange}
+            required
+            placeholder="+14155552671"
+          />
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
