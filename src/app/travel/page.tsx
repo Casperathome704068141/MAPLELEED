@@ -44,6 +44,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CabinClass = FlightSearchDetails['cabinClass'];
 
+// IMPORTANT: Replace with your Firebase Project ID
+const FIREBASE_PROJECT_ID = 'studio-9298040015-4934f';
+const searchFlightsUrl = `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net/searchFlights`;
+
+
 function TravelHero() {
   const travelImage = PlaceHolderImages.find((p) => p.id === 'travel-hero');
   return (
@@ -151,14 +156,14 @@ function TravelSearchSection() {
         destination,
         departureDate,
         adults: submittedAdults,
-        cabinClass,
+        cabin_class: cabinClass,
       };
 
       if (tripType === 'return' && returnDateValue) {
         payload.returnDate = returnDateValue;
       }
 
-      const response = await fetch('/api/flights/search', {
+      const response = await fetch(searchFlightsUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -544,7 +549,7 @@ function WhyBookWithUs() {
       icon: <Wallet className="h-10 w-10 text-primary" />,
       title: 'Transparent pricing',
       description:
-        'All fares include our $59 service markup and estimated taxes so you know the exact amount being authorised through Duffel.',
+        'All fares include our $59 service fee and estimated taxes so you know the exact amount being authorised through Duffel.',
     },
     {
       icon: <ShieldCheck className="h-10 w-10 text-primary" />,

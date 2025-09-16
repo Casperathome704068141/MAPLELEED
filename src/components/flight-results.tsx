@@ -33,6 +33,13 @@ import { Input } from './ui/input';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Badge } from './ui/badge';
 
+// IMPORTANT: Replace with your Firebase Project ID
+const FIREBASE_PROJECT_ID = 'studio-9298040015-4934f';
+const createDuffelPaymentIntentUrl = `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net/createDuffelPaymentIntent`;
+const confirmDuffelPaymentIntentUrl = `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net/confirmDuffelPaymentIntent`;
+const bookOrderUrl = `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net/bookOrder`;
+
+
 type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 
 export type FlightSearchDetails = {
@@ -46,6 +53,7 @@ export type FlightSearchDetails = {
 };
 
 type Passenger = {
+  id?: string;
   title: 'mr' | 'ms' | 'mrs';
   gender: 'm' | 'f';
   given_name: string;
@@ -368,7 +376,7 @@ const BookingDialog = ({
       setError(null);
       setPaymentIntent(null);
       try {
-        const res = await fetch('/api/payments/duffel/create-intent', {
+        const res = await fetch(createDuffelPaymentIntentUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -404,7 +412,7 @@ const BookingDialog = ({
     setIsBooking(true);
     setError(null);
     try {
-      const confirmRes = await fetch('/api/payments/duffel/confirm-intent', {
+      const confirmRes = await fetch(confirmDuffelPaymentIntentUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payment_intent_id: paymentIntentId }),
@@ -424,8 +432,8 @@ const BookingDialog = ({
         ...p,
         id: `passenger-${index + 1}`,
       }));
-
-      const bookRes = await fetch('/api/flights/book', {
+      
+      const bookRes = await fetch(bookOrderUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
