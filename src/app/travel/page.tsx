@@ -7,13 +7,12 @@ import {
   BedDouble,
   Search,
   ShieldCheck,
-  Percent,
   Wallet,
   Globe,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,6 +38,7 @@ function TravelHero() {
                     fill
                     className="object-cover"
                     data-ai-hint={travelImage.imageHint}
+                    priority
                 />
             )}
             <div className="absolute inset-0 bg-black/50" />
@@ -65,60 +65,60 @@ function TravelSearchSection() {
   }
 
   return (
-    <section id="travel-search" className="py-20 lg:py-28">
+    <section id="travel-search" className="pb-20 lg:pb-28">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto -mt-40 relative z-20">
+        <div className="max-w-4xl mx-auto -mt-32 md:-mt-40 relative z-20">
             <Tabs defaultValue="flights" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="flights">
-                <Plane className="mr-2 h-4 w-4" /> Flights
+            <TabsList className="grid w-full grid-cols-2 h-14 rounded-t-lg rounded-b-none">
+                <TabsTrigger value="flights" className="text-base h-full rounded-b-none data-[state=active]:border-b-2 border-primary">
+                  <Plane className="mr-2" /> Flights
                 </TabsTrigger>
-                <TabsTrigger value="accommodations">
-                <BedDouble className="mr-2 h-4 w-4" /> Accommodations
+                <TabsTrigger value="accommodations" className="text-base h-full rounded-b-none data-[state=active]:border-b-2 border-primary">
+                  <BedDouble className="mr-2" /> Stays
                 </TabsTrigger>
             </TabsList>
             <TabsContent value="flights">
-                <Card className="shadow-2xl">
+                <Card className="shadow-2xl rounded-t-none">
                 <CardContent className="p-6 space-y-4">
                     <form onSubmit={(e) => handleTravelSearch(e, 'Flights')}>
                     <div className="grid md:grid-cols-2 gap-4">
-                        <Input placeholder="From (e.g., Mumbai)" />
-                        <Input placeholder="To (e.g., New York)" />
+                        <Input placeholder="From (e.g., Mumbai)" className="h-12" />
+                        <Input placeholder="To (e.g., Toronto)" className="h-12"/>
                     </div>
                     <div className="grid md:grid-cols-3 gap-4 mt-4">
-                        <Input type="date" placeholder="Departure" />
-                        <Input type="date" placeholder="Return (Optional)" />
+                        <Input type="date" placeholder="Departure" className="h-12"/>
+                        <Input type="date" placeholder="Return (Optional)" className="h-12"/>
                         <Select defaultValue='1'>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Passengers" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="1">1 Passenger</SelectItem>
-                            <SelectItem value="2">2 Passengers</SelectItem>
-                            <SelectItem value="3">3 Passengers</SelectItem>
-                            <SelectItem value="4">4+ Passengers</SelectItem>
-                        </SelectContent>
+                          <SelectTrigger className="h-12">
+                              <SelectValue placeholder="Passengers" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="1">1 Passenger</SelectItem>
+                              <SelectItem value="2">2 Passengers</SelectItem>
+                              <SelectItem value="3">3 Passengers</SelectItem>
+                              <SelectItem value="4">4+ Passengers</SelectItem>
+                          </SelectContent>
                         </Select>
                     </div>
-                    <Button type="submit" className="w-full mt-6">
-                        <Search className="mr-2 h-4 w-4" /> Search Flights
+                    <Button type="submit" size="lg" className="w-full mt-6 h-12 text-base">
+                        <Search className="mr-2" /> Search Flights
                     </Button>
                     </form>
                 </CardContent>
                 </Card>
             </TabsContent>
             <TabsContent value="accommodations">
-                <Card className="shadow-2xl">
+                <Card className="shadow-2xl rounded-t-none">
                 <CardContent className="p-6 space-y-4">
                     <form onSubmit={(e) => handleTravelSearch(e, 'Accommodations')}>
-                    <Input placeholder="Destination, city, or hotel" />
+                    <Input placeholder="Destination, city, or hotel" className="h-12"/>
                     <div className="grid md:grid-cols-2 gap-4 mt-4">
-                        <Input type="date" placeholder="Check-in" />
-                        <Input type="date" placeholder="Check-out" />
+                        <Input type="date" placeholder="Check-in" className="h-12"/>
+                        <Input type="date" placeholder="Check-out" className="h-12"/>
                     </div>
                     <div className="mt-4">
                         <Select defaultValue='1g1r'>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12">
                             <SelectValue placeholder="Guests & Rooms" />
                         </SelectTrigger>
                         <SelectContent>
@@ -128,8 +128,8 @@ function TravelSearchSection() {
                         </SelectContent>
                         </Select>
                     </div>
-                    <Button type="submit" className="w-full mt-6">
-                        <Search className="mr-2 h-4 w-4" /> Search Accommodations
+                    <Button type="submit" size="lg" className="w-full mt-6 h-12 text-base">
+                        <Search className="mr-2" /> Search Accommodations
                     </Button>
                     </form>
                 </CardContent>
@@ -143,27 +143,27 @@ function TravelSearchSection() {
 }
 
 
-function TravelResourcesSection() {
+function WhyBookWithUs() {
     const features = [
     {
-      icon: <Wallet className="w-8 h-8 text-primary" />,
-      title: 'All-In-One Pricing',
+      icon: <Wallet className="w-10 h-10 text-primary" />,
+      title: 'Transparent Pricing',
       description: 'The price you see is the price you pay. Our final price includes our service markup and estimated taxes, so there are no surprises.',
     },
     {
-      icon: <ShieldCheck className="w-8 h-8 text-primary" />,
+      icon: <ShieldCheck className="w-10 h-10 text-primary" />,
       title: 'Secure & Reliable',
-      description: 'We partner with leading global travel suppliers to bring you reliable options. All payments are processed securely via Stripe.',
+      description: 'We partner with leading global travel suppliers. All payments are processed securely, and your bookings are confirmed directly with providers.',
     },
     {
-      icon: <Globe className="w-8 h-8 text-primary" />,
+      icon: <Globe className="w-10 h-10 text-primary" />,
       title: 'Designed for Students',
       description: 'We focus on routes and accommodations that are popular and convenient for international students, saving you research time.',
     },
   ];
 
   return (
-    <section id="resources" className="pb-20 lg:pb-28">
+    <section id="why-book" className="py-20 lg:py-28 bg-card">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-headline font-bold">Why Book With Us?</h2>
@@ -173,7 +173,7 @@ function TravelResourcesSection() {
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-             <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+             <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300 border-transparent hover:border-primary">
               <CardHeader className="items-center">
                 <div className="p-4 bg-primary/10 rounded-full">{feature.icon}</div>
                 <CardTitle className="font-headline mt-4">{feature.title}</CardTitle>
@@ -196,7 +196,7 @@ export default function TravelPage() {
       <main className="flex-grow">
         <TravelHero />
         <TravelSearchSection />
-        <TravelResourcesSection />
+        <WhyBookWithUs />
       </main>
       <Footer />
     </div>
