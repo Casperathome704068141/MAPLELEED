@@ -24,17 +24,17 @@ function HeroSection() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 text-center md:text-left">
             <h1 className="text-4xl lg:text-5xl xl:text-6xl font-headline font-bold tracking-tighter">
-              Navigate Your Global Future with VisaPilot
+              Your Study Permit and Travel, All in One Place.
             </h1>
             <p className="text-lg text-muted-foreground">
-              From seamless appointment scheduling with visa experts to integrated travel booking, we're your co-pilot for a successful journey abroad.
+              From expert visa consultations for Canada to seamless flight and accommodation booking, we're your partner for a successful journey abroad.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <Button size="lg" asChild>
-                <Link href="/study">Book a Consultation <ArrowRight className="ml-2" /></Link>
+                <Link href="/study#appointments">Book a Consultation <ArrowRight className="ml-2" /></Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/travel">Explore Travel</Link>
+                <Link href="/travel">Explore Travel Options</Link>
               </Button>
             </div>
           </div>
@@ -60,24 +60,24 @@ function ServicesSection() {
     const services = [
     {
       icon: <GraduationCap className="w-10 h-10 text-primary" />,
-      title: 'Study & Visa Guidance',
-      description: 'Navigate your study visa application with expert consultations and AI-powered document checklists.',
+      title: 'Canada Study Permit',
+      description: 'Navigate your Canadian study permit application with expert consultations and AI-powered checklists.',
       href: '/study',
-      cta: 'Get Started',
+      cta: 'Explore Tiers',
     },
     {
       icon: <Plane className="w-10 h-10 text-primary" />,
-      title: 'Flights & Accommodation',
+      title: 'Flights & Stays',
       description: 'Find and book your flights and initial accommodation seamlessly through our integrated platform.',
       href: '/travel',
       cta: 'Book Travel',
     },
     {
       icon: <CalendarCheck className="w-10 h-10 text-primary" />,
-      title: 'End-to-End Support',
-      description: 'We manage the entire process, from initial advice to your safe arrival, all without needing an account.',
-      href: '/#process',
-      cta: 'Learn More',
+      title: 'Book a Consultation',
+      description: 'Schedule a free consultation call with our visa experts to get your questions answered and start your journey.',
+      href: '/study#appointments',
+      cta: 'Book Now',
     },
   ];
 
@@ -116,7 +116,7 @@ function ProcessSection() {
     {
       step: 1,
       title: "Book Your Consultation",
-      description: "Schedule a free call with our visa experts to discuss your plans and get initial guidance.",
+      description: "Schedule a free call with our visa experts to discuss your plans for studying in Canada.",
     },
     {
       step: 2,
@@ -137,27 +137,25 @@ function ProcessSection() {
             <h2 className="text-3xl md:text-4xl font-headline font-bold">How It Works</h2>
             <p className="text-lg text-muted-foreground mt-2">A simple, three-step path to your new adventure.</p>
         </div>
-        <div className="relative">
-          <div className="absolute left-1/2 top-4 bottom-4 w-0.5 bg-border -translate-x-1/2 hidden md:block" aria-hidden="true"></div>
+        <div className="relative max-w-5xl mx-auto">
+          {/* Desktop timeline */}
+          <div className="absolute left-0 right-0 top-1/2 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block" aria-hidden="true"></div>
+          
           <div className="grid md:grid-cols-3 gap-8 md:gap-0">
             {steps.map((step, index) => (
-              <div key={index} className="relative p-4">
-                 <div className="md:absolute top-1/2 -translate-y-1/2 w-full flex justify-center">
-                    <div className="hidden md:flex items-center justify-center size-12 rounded-full bg-primary text-primary-foreground font-bold text-xl ring-8 ring-background z-10">
+              <div key={index} className="relative p-4 text-center">
+                 <div className="md:absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full flex justify-center z-10">
+                    <div className="hidden md:flex items-center justify-center size-14 rounded-full bg-primary text-primary-foreground font-bold text-2xl ring-8 ring-card">
                         {step.step}
                     </div>
                  </div>
-                 <Card className="text-center h-full">
-                    <CardHeader>
-                        <div className="md:hidden flex items-center justify-center size-12 rounded-full bg-primary text-primary-foreground font-bold text-xl mx-auto mb-4">
-                            {step.step}
-                        </div>
-                        <CardTitle className="font-headline">{step.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">{step.description}</p>
-                    </CardContent>
-                 </Card>
+                 <div className="md:pt-12">
+                    <div className="md:hidden flex items-center justify-center size-12 rounded-full bg-primary text-primary-foreground font-bold text-xl mx-auto mb-4">
+                        {step.step}
+                    </div>
+                    <h3 className="font-headline text-xl font-bold">{step.title}</h3>
+                    <p className="text-muted-foreground mt-2">{step.description}</p>
+                 </div>
               </div>
             ))}
           </div>
