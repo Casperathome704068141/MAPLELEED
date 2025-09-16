@@ -20,7 +20,7 @@ import {
   CalendarClock,
   Plane,
   Wand2,
-  Settings,
+  GraduationCap,
   LogOut
 } from "lucide-react"
 
@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button"
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   
-  const isActive = (path: string) => pathname === path
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
 
   return (
     <SidebarProvider>
@@ -53,6 +53,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={isActive('/admin/appointments')} tooltip="Appointments">
                 <Link href="/admin/appointments"><CalendarClock /><span>Appointments</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive('/admin/study')} tooltip="Study">
+                <Link href="/admin/study"><GraduationCap /><span>Study Admin</span></Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

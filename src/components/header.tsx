@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { VisaPilotIcon } from './icons';
+import { ArrowRight } from 'lucide-react';
 
 export default function Header() {
   return (
@@ -11,22 +12,22 @@ export default function Header() {
           <span className="font-headline font-bold text-xl">VisaPilot</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/#appointments" className="text-sm font-medium hover:text-primary transition-colors">
-            Appointments
+          <Link href="/study" className="text-sm font-medium hover:text-primary transition-colors">
+            Study
           </Link>
-          <Link href="/#travel" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link href="/travel" className="text-sm font-medium hover:text-primary transition-colors">
             Travel
           </Link>
-          <Link href="/#features" className="text-sm font-medium hover:text-primary transition-colors">
-            Resources
+           <Link href="/#services" className="text-sm font-medium hover:text-primary transition-colors">
+            Services
           </Link>
         </nav>
         <div className="flex items-center gap-2">
            <Button variant="ghost" asChild>
              <Link href="/admin">Admin Panel</Link>
            </Button>
-           <Button>
-             Book Now
+           <Button asChild>
+             <Link href="/study">Book Consultation <ArrowRight className="ml-2" /></Link>
            </Button>
         </div>
       </div>

@@ -6,6 +6,12 @@
       "description": "Happy international students celebrating their successful visa applications.",
       "imageUrl": "https://picsum.photos/seed/visapilot-hero/1200/800",
       "imageHint": "happy students"
+    },
+    {
+      "id": "travel-hero",
+      "description": "A plane flying over a world map, symbolizing international travel for education.",
+      "imageUrl": "https://picsum.photos/seed/visapilot-travel/1920/1080",
+      "imageHint": "plane travel"
     }
   ]
 }
