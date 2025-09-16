@@ -37,9 +37,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useFormState, useFormStatus } from 'react-dom';
-import { handleFindStudyOptions } from '@/app/actions';
+import { handleFindStudyOptions, bookConsultation, bookingInitialState } from '@/app/actions';
+import type { BookingFormState } from '@/app/actions';
 import type { FindStudyOptionsOutput } from '@/ai/flows/find-study-options';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
 
 const timeSlots = [
   '09:00 AM',
@@ -367,22 +369,70 @@ function AppointmentSection() {
   const [selectedTime, setSelectedTime] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const { toast } = useToast();
+  const [bookingState, bookConsultationAction] = useFormState(bookConsultation, bookingInitialState);
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const lastResultRef = React.useRef<{
+    status: BookingFormState['status'];
+    appointmentId?: string;
+    message?: string;
+  }>({ status: bookingInitialState.status });
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     setIsModalOpen(true);
   };
-  
-  const handleBookingSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsModalOpen(false);
-    toast({
-      title: "Consultation Booked!",
-      description: `Your appointment is confirmed for ${date?.toLocaleDateString()} at ${selectedTime}. A confirmation email has been sent.`,
-      variant: 'default'
-    });
-    setSelectedTime(null);
-  };
+
+  React.useEffect(() => {
+    const lastHandled = lastResultRef.current;
+
+    if (bookingState.status === 'success' && bookingState.appointment) {
+      if (lastHandled.status === 'success' && lastHandled.appointmentId === bookingState.appointment.id) {
+        return;
+      }
+
+      const appointmentDate = new Date(bookingState.appointment.scheduledFor);
+      toast({
+        title: 'Consultation Booked!',
+        description: `Your appointment is confirmed for ${appointmentDate.toLocaleDateString()} at ${bookingState.appointment.timeSlotLabel}.`,
+      });
+      setIsModalOpen(false);
+      setSelectedTime(null);
+      formRef.current?.reset();
+
+      lastResultRef.current = {
+        status: 'success',
+        appointmentId: bookingState.appointment.id,
+      };
+      return;
+    }
+
+    if (bookingState.status === 'error') {
+      const shouldToast =
+        bookingState.message && (!bookingState.errors || Object.keys(bookingState.errors).length === 0);
+
+      if (
+        shouldToast &&
+        !(lastHandled.status === 'error' && lastHandled.message === bookingState.message)
+      ) {
+        toast({
+          title: 'Booking not saved',
+          description: bookingState.message,
+          variant: 'destructive',
+        });
+      }
+
+      lastResultRef.current = {
+        status: 'error',
+        message: shouldToast ? bookingState.message : undefined,
+      };
+      return;
+    }
+
+    lastResultRef.current = { status: bookingState.status };
+  }, [bookingState, toast]);
+
+  const formattedDate = date ? format(date, 'yyyy-MM-dd') : '';
+  const isSubmitDisabled = !date || !selectedTime;
 
   return (
     <section id="appointments" className="py-20 lg:py-28 bg-card">
@@ -443,24 +493,86 @@ function AppointmentSection() {
               You are booking a consultation for {date?.toLocaleDateString()} at {selectedTime}. Please provide your details below.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleBookingSubmit}>
-            <div className="grid gap-6 py-4">
+          <form ref={formRef} action={bookConsultationAction} className="space-y-4">
+            <input type="hidden" name="date" value={formattedDate} readOnly aria-hidden="true" />
+            <input type="hidden" name="time" value={selectedTime ?? ''} readOnly aria-hidden="true" />
+
+            {bookingState.status === 'error' && bookingState.message && (
+              <Alert variant="destructive">
+                <AlertTitle>Booking not saved</AlertTitle>
+                <AlertDescription>{bookingState.message}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" required placeholder="Jane Doe" className="h-11"/>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  placeholder="Jane Doe"
+                  className="h-11"
+                  aria-invalid={Boolean(bookingState.errors?.name)}
+                />
+                {bookingState.errors?.name && (
+                  <p className="text-sm text-destructive">
+                    {bookingState.errors.name.join(' ')}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" required placeholder="jane.doe@example.com" className="h-11" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="jane.doe@example.com"
+                  className="h-11"
+                  aria-invalid={Boolean(bookingState.errors?.email)}
+                />
+                {bookingState.errors?.email && (
+                  <p className="text-sm text-destructive">
+                    {bookingState.errors.email.join(' ')}
+                  </p>
+                )}
               </div>
             </div>
+            {bookingState.errors?.date && (
+              <p className="text-sm text-destructive" role="alert">
+                {bookingState.errors.date.join(' ')}
+              </p>
+            )}
+            {bookingState.errors?.time && (
+              <p className="text-sm text-destructive" role="alert">
+                {bookingState.errors.time.join(' ')}
+              </p>
+            )}
             <DialogFooter>
-              <Button type="submit" size="lg" className="w-full">Confirm Booking</Button>
+              <BookingSubmitButton disabled={isSubmitDisabled} />
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+function BookingSubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" size="lg" className="w-full" disabled={disabled || pending}>
+      {pending ? (
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          Booking...
+        </span>
+      ) : (
+        'Confirm Booking'
+      )}
+    </Button>
   );
 }
 
