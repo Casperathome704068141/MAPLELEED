@@ -2,7 +2,6 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { handleGenerateSummary } from '@/app/actions';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -19,13 +18,18 @@ const initialState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending} size="lg" className="w-full">
       {pending ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generating...
+        </>
       ) : (
-        <Wand2 className="mr-2 h-4 w-4" />
+        <>
+          <Wand2 className="mr-2 h-4 w-4" />
+          Generate Summary
+        </>
       )}
-      Generate Summary
     </Button>
   );
 }
@@ -46,60 +50,46 @@ export default function ConsultationSummaryGenerator() {
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Consultation Summary</CardTitle>
-          <CardDescription>
-            Input the student's background and consultation notes to generate a structured summary.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form ref={formRef} action={formAction} className="space-y-4">
-            <div>
-              <Label htmlFor="studentBackground">Student Background</Label>
-              <Textarea
-                id="studentBackground"
-                name="studentBackground"
-                placeholder="E.g., Bachelor's in Computer Science from University of Mumbai, 2 years experience as a software developer..."
-                className="min-h-[120px]"
-                required
-              />
-              {state.errors?.studentBackground && (
-                <p className="text-sm text-destructive mt-1">{state.errors.studentBackground[0]}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="consultationNotes">Consultation Notes</Label>
-              <Textarea
-                id="consultationNotes"
-                name="consultationNotes"
-                placeholder="E.g., Discussed F-1 visa requirements, financial documentation, and interview preparation..."
-                className="min-h-[120px]"
-                required
-              />
-               {state.errors?.consultationNotes && (
-                <p className="text-sm text-destructive mt-1">{state.errors.consultationNotes[0]}</p>
-              )}
-            </div>
-            <SubmitButton />
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Generated Summary</CardTitle>
-          <CardDescription>Review and edit the AI-generated summary below.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="prose prose-sm max-w-none rounded-md border bg-secondary/50 p-4 min-h-[280px]">
+      <form ref={formRef} action={formAction} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="studentBackground">Student Background</Label>
+          <Textarea
+            id="studentBackground"
+            name="studentBackground"
+            placeholder="E.g., Bachelor's in Computer Science from University of Mumbai, 2 years experience as a software developer..."
+            className="min-h-[150px]"
+            required
+          />
+          {state.errors?.studentBackground && (
+            <p className="text-sm text-destructive mt-1">{state.errors.studentBackground[0]}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="consultationNotes">Consultation Notes</Label>
+          <Textarea
+            id="consultationNotes"
+            name="consultationNotes"
+            placeholder="E.g., Discussed F-1 visa requirements, financial documentation, and interview preparation..."
+            className="min-h-[150px]"
+            required
+          />
+           {state.errors?.consultationNotes && (
+            <p className="text-sm text-destructive mt-1">{state.errors.consultationNotes[0]}</p>
+          )}
+        </div>
+        <SubmitButton />
+      </form>
+      
+      <div className="space-y-2">
+        <Label htmlFor="generatedSummary">Generated Summary</Label>
+        <div className="prose prose-sm max-w-none rounded-md border bg-secondary/50 p-4 min-h-[358px]">
             {state.data ? (
-                <Textarea defaultValue={state.data} className="w-full h-full bg-transparent border-none p-0 focus-visible:ring-0" />
+                <Textarea id="generatedSummary" defaultValue={state.data} className="w-full h-full bg-transparent border-none p-0 focus-visible:ring-0" />
             ) : (
               <p className="text-muted-foreground">The generated summary will appear here.</p>
             )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

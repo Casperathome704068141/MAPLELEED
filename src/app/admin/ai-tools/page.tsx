@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import ConsultationSummaryGenerator from "@/components/admin/consultation-summary-generator";
 import DocumentChecklistGenerator from "@/components/admin/document-checklist-generator";
 
@@ -12,10 +13,30 @@ export default function AiToolsPage() {
           <TabsTrigger value="checklist-generator">Document Checklist</TabsTrigger>
         </TabsList>
         <TabsContent value="summary-generator" className="mt-6">
-          <ConsultationSummaryGenerator />
+          <Card>
+             <CardHeader>
+              <CardTitle>Generate Consultation Summary</CardTitle>
+              <CardDescription>
+                Input the student's background and consultation notes to generate a structured summary.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConsultationSummaryGenerator />
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="checklist-generator" className="mt-6">
-          <DocumentChecklistGenerator />
+           <Card>
+            <CardHeader>
+              <CardTitle>Generate Document Checklist</CardTitle>
+              <CardDescription>
+                Input the student's background to generate a tailored document checklist.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentChecklistGenerator />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
