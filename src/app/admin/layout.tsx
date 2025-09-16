@@ -94,7 +94,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6 bg-background/60">{children}</main>
+        <main className="flex-1 bg-secondary/30">
+          <div className="p-4 sm:p-6">{children}</div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
