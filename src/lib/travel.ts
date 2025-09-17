@@ -1,4 +1,6 @@
-const MARKUP_PER_TICKET = 75;
+const MARKUP_THRESHOLD = 999;
+const MARKUP_BELOW_THRESHOLD = 75;
+const MARKUP_ABOVE_THRESHOLD = 100;
 
 type PassengerCount = number;
 
@@ -48,9 +50,20 @@ type OfferSummary = {
 
 export type {OfferSummary, Pricing, SliceSummary, SegmentSummary};
 
+function resolveMarkupPerTicket(totalAmount: number) {
+  if (!Number.isFinite(totalAmount)) {
+    return MARKUP_BELOW_THRESHOLD;
+  }
+
+  return totalAmount < MARKUP_THRESHOLD
+    ? MARKUP_BELOW_THRESHOLD
+    : MARKUP_ABOVE_THRESHOLD;
+}
+
 export function applyMarkup(offer: Offer, passengers: PassengerCount) {
   const base = Number(offer.total_amount ?? 0);
-  const markupTotal = MARKUP_PER_TICKET * passengers;
+  const markupPerTicket = resolveMarkupPerTicket(base);
+  const markupTotal = markupPerTicket * passengers;
   const display = (base + markupTotal).toFixed(2);
 
   return {
@@ -58,7 +71,7 @@ export function applyMarkup(offer: Offer, passengers: PassengerCount) {
     pricing: {
       currency: offer.total_currency,
       base_total_amount: String(offer.total_amount ?? '0.00'),
-      markup_per_ticket: MARKUP_PER_TICKET.toFixed(2),
+      markup_per_ticket: markupPerTicket.toFixed(2),
       tickets: passengers,
       markup_total: markupTotal.toFixed(2),
       display_total_amount: display,
