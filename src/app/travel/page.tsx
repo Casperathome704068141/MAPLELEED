@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {FormEvent, useMemo, useRef, useState} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {FormEvent, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -14,16 +15,14 @@ import {
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import {TravelStepIndicator} from "@/components/travel-step-indicator";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
-
-type SearchState = {
-  origin: string;
-  destination: string;
-  departureDate: string;
-  returnDate?: string | null;
-  adults: number;
-  cabinClass: string;
-};
+import {
+  normaliseTravelSearchState,
+  travelSearchFromParams,
+  travelSearchToParams,
+  type TravelSearchState,
+} from "@/lib/travel-search";
 
 type SortOption = "recommended" | "lowest-price" | "fastest" | "earliest";
 type StopsFilter = "any" | "nonstop" | "1" | "2+";
@@ -112,8 +111,8 @@ const SERVICE_PILLARS = [
     body: "Receive airline letters, insurance confirmation, and enrollment proofs ready for embassy appointments.",
   },
   {
-    title: "Transparent concierge fees",
-    body: "We add $75 per traveller under $999 and $100 for higher-value itineraries—no hidden extras when you check out.",
+    title: "All-in student pricing",
+    body: "MapleLeed concierge expertise is bundled directly into every fare so the price you see is the price you pay at checkout.",
   },
   {
     title: "Proactive disruption care",
@@ -123,14 +122,14 @@ const SERVICE_PILLARS = [
 
 const FAQ_ITEMS = [
   {
-    question: "What is included in the concierge fee?",
+    question: "How are MapleLeed fares calculated?",
     answer:
-      "Our concierge service covers itinerary curation, visa-ready documentation, seat selection support, disruption management, and live travel chat. It is $75 per traveller for bookings under $999 total and $100 for higher-value trips.",
+      "We combine the live Duffel airline fare with MapleLeed concierge support into one upfront price. There are no surprise add-ons or service fees later in the process.",
   },
   {
-    question: "Can I pay separately for my flights and concierge support?",
+    question: "Will I see multiple charges when I pay?",
     answer:
-      "Yes. You will pay the airline directly through our Duffel checkout while MapleLeed charges the concierge fee. This keeps your airfare transparent and still gives you full support.",
+      "No. You approve a single total during checkout. MapleLeed allocates the concierge portion on our side while Duffel settles the airline balance in the background.",
   },
   {
     question: "Do you support multi-city or open-jaw itineraries?",
@@ -143,7 +142,7 @@ const POPULAR_ROUTES = [
   {
     origin: "YYZ",
     destination: "LHR",
-    note: "Average concierge-backed fare $865",
+    note: "Average MapleLeed fare $865",
   },
   {
     origin: "SFO",
@@ -163,6 +162,8 @@ const TIME_WINDOWS: Record<Exclude<TimeFilter, "any">, [number, number]> = {
   evening: [18 * 60, 21 * 60 + 59],
   overnight: [22 * 60, 23 * 60 + 59],
 };
+
+const SEARCH_SECTION_ID = "flight-search";
 
 function formatDate(value?: string | null) {
   if (!value) return "";
@@ -252,18 +253,130 @@ function matchesTimeFilter(minutes: number | null, filter: TimeFilter) {
 }
 
 export default function TravelPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = useMemo(
+    () => travelSearchFromParams(searchParams),
+    [searchParams],
+  );
+
   const [offers, setOffers] = useState<OfferSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastSearch, setLastSearch] = useState<SearchState | null>(null);
+  const [lastSearch, setLastSearch] = useState<TravelSearchState | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>("recommended");
   const [stopsFilter, setStopsFilter] = useState<StopsFilter>("any");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("any");
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
+  const [hasAutoSearched, setHasAutoSearched] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const travellerCount = lastSearch?.adults ?? 1;
+  const travellerCount = lastSearch?.adults ?? initialQuery.adults ?? 1;
+  const currentSearch = lastSearch ?? initialQuery;
+
+  const executeSearch = useCallback(
+    async (search: TravelSearchState) => {
+      const normalizedPayload = normaliseTravelSearchState(search);
+      setHasAutoSearched(true);
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      setLoading(true);
+      setError(null);
+      setOffers([]);
+      setSortOption("recommended");
+      setStopsFilter("any");
+      setTimeFilter("any");
+      setSelectedAirlines([]);
+
+      try {
+        const response = await fetch("/api/travel/search", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(normalizedPayload),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const {error: message} = await response.json().catch(() => ({error: ""}));
+          throw new Error(message || "Search request failed. Please try again.");
+        }
+
+        const data = await response.json();
+        setOffers(data.offers ?? []);
+
+        const passengers = Math.max(
+          1,
+          Number(data.passengers ?? normalizedPayload.adults),
+        );
+        const normalizedResult = normaliseTravelSearchState({
+          ...normalizedPayload,
+          adults: passengers,
+        });
+        setLastSearch(normalizedResult);
+
+        const query = travelSearchToParams(normalizedResult);
+        const queryString = query.toString();
+        const targetUrl = queryString ? `/travel?${queryString}` : "/travel";
+        router.replace(targetUrl, {scroll: false});
+
+        requestAnimationFrame(() => {
+          const section = document.getElementById(SEARCH_SECTION_ID);
+          section?.scrollIntoView({behavior: "smooth", block: "start"});
+        });
+      } catch (err: any) {
+        if (err?.name === "AbortError") {
+          return;
+        }
+        console.error(err);
+        setError(err?.message ?? "We couldn’t reach the flight search service.");
+      } finally {
+        if (abortRef.current === controller) {
+          abortRef.current = null;
+        }
+        setLoading(false);
+      }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const values: Record<string, string> = {
+      origin: initialQuery.origin,
+      destination: initialQuery.destination,
+      departureDate: initialQuery.departureDate,
+      returnDate: initialQuery.returnDate ?? "",
+      adults: initialQuery.adults ? initialQuery.adults.toString() : "",
+      cabinClass: initialQuery.cabinClass,
+    };
+
+    Object.entries(values).forEach(([name, value]) => {
+      const element = form.elements.namedItem(name);
+      if (
+        element instanceof HTMLInputElement ||
+        element instanceof HTMLSelectElement
+      ) {
+        element.value = value;
+      }
+    });
+  }, [initialQuery]);
+
+  useEffect(() => {
+    if (hasAutoSearched) return;
+    if (
+      initialQuery.origin &&
+      initialQuery.destination &&
+      initialQuery.departureDate
+    ) {
+      executeSearch(initialQuery);
+    }
+  }, [executeSearch, hasAutoSearched, initialQuery]);
 
   const resultsTitle = useMemo(() => {
     if (!lastSearch) return null;
@@ -441,58 +554,17 @@ export default function TravelPage() {
   async function onSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const payload: SearchState = {
-      origin: String(formData.get("origin") ?? "").toUpperCase(),
-      destination: String(formData.get("destination") ?? "").toUpperCase(),
-      departureDate: String(formData.get("departureDate") ?? ""),
+    const payload = normaliseTravelSearchState({
+      origin: formData.get("origin"),
+      destination: formData.get("destination"),
+      departureDate: formData.get("departureDate"),
       returnDate: (formData.get("returnDate") as string) || null,
-      adults: Math.max(1, Number(formData.get("adults") ?? 1)),
-      cabinClass: String(formData.get("cabinClass") ?? "economy"),
-    };
+      adults: formData.get("adults"),
+      cabinClass: formData.get("cabinClass"),
+    });
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    setLoading(true);
-    setError(null);
-    setOffers([]);
-    setSortOption("recommended");
-    setStopsFilter("any");
-    setTimeFilter("any");
-    setSelectedAirlines([]);
-
-    try {
-      const response = await fetch("/api/travel/search", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const {error: message} = await response.json().catch(() => ({error: ""}));
-        throw new Error(message || "Search request failed. Please try again.");
-      }
-
-      const data = await response.json();
-      setOffers(data.offers ?? []);
-      setLastSearch({...payload, adults: data.passengers ?? payload.adults});
-    } catch (err: any) {
-      if (err?.name === "AbortError") {
-        return;
-      }
-      console.error(err);
-      setError(err?.message ?? "We couldn’t reach the flight search service.");
-    } finally {
-      if (abortRef.current === controller) {
-        abortRef.current = null;
-      }
-      setLoading(false);
-    }
+    await executeSearch(payload);
   }
-
-  const searchSectionId = "flight-search";
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -513,9 +585,9 @@ export default function TravelPage() {
                   Book smarter flights with MapleLeed Travel Concierge
                 </h1>
                 <p className="max-w-2xl text-lg text-slate-200">
-                  Compare real-time Duffel fares, add our concierge fee—$75 per traveller for trips
-                  under $999 total and $100 for higher fares—and checkout in minutes. We stay with you
-                  until you arrive on campus.
+                  Compare real-time Duffel fares curated by MapleLeed. Our concierge care is already
+                  built into every price so you can check out in minutes and travel with a team by your
+                  side until you arrive on campus.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {HERO_HIGHLIGHTS.map(feature => (
@@ -583,8 +655,11 @@ export default function TravelPage() {
           </div>
         </section>
 
-        <section id={searchSectionId} className="relative -mt-16 px-6 pb-24">
+        <section id={SEARCH_SECTION_ID} className="relative -mt-16 px-6 pb-24">
           <div className="mx-auto flex max-w-6xl flex-col gap-10">
+            <div className="flex justify-center">
+              <TravelStepIndicator currentStep={1} />
+            </div>
             <form
               ref={formRef}
               onSubmit={onSearch}
@@ -696,9 +771,8 @@ export default function TravelPage() {
                   <span className="text-sm text-muted-foreground">{resultsTitle}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Pricing includes airline fares plus our concierge fee—$75 per traveller under $999
-                  total or $100 per traveller above that threshold. Pay airlines via Duffel, MapleLeed
-                  handles the support fee.
+                  Every fare shown already includes MapleLeed concierge support alongside the live airline
+                  price so you can pay once and focus on preparing for departure.
                 </p>
               </div>
             )}
@@ -825,9 +899,9 @@ export default function TravelPage() {
 
                 {analytics && (
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-3xl border border-border bg-card/90 p-5 shadow">
+                      <div className="rounded-3xl border border-border bg-card/90 p-5 shadow">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Average concierge total
+                        Average MapleLeed fare
                       </p>
                       <p className="mt-2 text-2xl font-bold">
                         {formatCurrency(analytics.averagePrice, analytics.currency)}
@@ -903,10 +977,16 @@ export default function TravelPage() {
                 const {offer, totalDuration, price, maxStops} = item;
                 const totalPrice = price;
                 const currency = offer.pricing.currency;
-                const markupPerTicket = parseMoney(offer.pricing.markup_per_ticket);
                 const perTraveller = travellerCount > 0 ? totalPrice / travellerCount : totalPrice;
                 const firstSlice = offer.slices[0];
                 const firstSegment = firstSlice?.segments?.[0];
+                const detailParams = travelSearchToParams({
+                  ...currentSearch,
+                  adults: travellerCount,
+                });
+                detailParams.set("pax", travellerCount.toString());
+                const detailQuery = detailParams.toString();
+                const detailHref = `/travel/offers/${offer.id}${detailQuery ? `?${detailQuery}` : ""}`;
 
                 return (
                   <article
@@ -939,14 +1019,13 @@ export default function TravelPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Total including concierge</p>
+                        <p className="text-sm text-muted-foreground">All-in MapleLeed price</p>
                         <p className="text-3xl font-headline font-bold">
                           {formatCurrency(totalPrice, currency)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(perTraveller, currency)} per traveller · Concierge fee
-                          {" "}
-                          {formatCurrency(markupPerTicket, currency)} each
+                          {formatCurrency(perTraveller, currency)} per traveller · Includes MapleLeed
+                          concierge care and airline taxes
                         </p>
                       </div>
                     </div>
@@ -1010,10 +1089,10 @@ export default function TravelPage() {
                         next step before checkout—our concierge will stay in touch.
                       </p>
                       <Link
-                        href={`/checkout?offer=${offer.id}&pax=${travellerCount}`}
+                        href={detailHref}
                         className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-2 font-semibold text-primary-foreground transition hover:bg-primary/90"
                       >
-                        Select & checkout
+                        Review itinerary
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>

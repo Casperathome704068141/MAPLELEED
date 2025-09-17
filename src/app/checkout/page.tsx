@@ -1,9 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import {ChangeEvent, FormEvent, useEffect, useMemo, useState} from "react";
+import {ArrowLeft, CheckCircle2, ShieldCheck} from "lucide-react";
+
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import {TravelStepIndicator} from "@/components/travel-step-indicator";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
+import {
+  travelSearchFromParams,
+  travelSearchToParams,
+} from "@/lib/travel-search";
 
 type PassengerForm = {
   title: string;
@@ -47,6 +55,32 @@ function formatDuration(duration?: string | null) {
   return parts.join(" ");
 }
 
+function parseAmount(value?: string | null) {
+  if (!value) return 0;
+  const amount = Number.parseFloat(String(value));
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function formatCurrency(amount: number, currency?: string | null) {
+  if (!Number.isFinite(amount)) {
+    return amount.toFixed(2);
+  }
+  if (!currency) {
+    return amount.toFixed(2);
+  }
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch (error) {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+const SEARCH_SECTION_ID = "flight-search";
+
 function segmentKey(segment: SegmentSummary, index: number) {
   return segment.id || `${segment.marketing_flight}-${index}`;
 }
@@ -71,10 +105,15 @@ type CheckoutProps = {
 
 export default function Checkout({searchParams}: CheckoutProps) {
   const offerId = searchParams.offer ?? "";
-  const passengerCount = useMemo(
-    () => Math.max(1, Number(searchParams.pax ?? "1")),
-    [searchParams.pax],
-  );
+  const searchContext = useMemo(() => travelSearchFromParams(searchParams), [searchParams]);
+  const passengerCount = useMemo(() => {
+    const raw = searchParams.pax ?? searchContext.adults ?? 1;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) {
+      return Math.max(1, Number(searchContext.adults ?? 1));
+    }
+    return Math.max(1, value);
+  }, [searchContext.adults, searchParams.pax]);
 
   const [offer, setOffer] = useState<OfferSummary | null>(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
@@ -87,6 +126,31 @@ export default function Checkout({searchParams}: CheckoutProps) {
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<any>(null);
+
+  const reviewQuery = useMemo(() => {
+    const params = travelSearchToParams({...searchContext, adults: passengerCount});
+    params.set("pax", passengerCount.toString());
+    return params.toString();
+  }, [passengerCount, searchContext]);
+
+  const reviewHref = useMemo(() => {
+    if (!offerId) {
+      return reviewQuery ? `/travel?${reviewQuery}#${SEARCH_SECTION_ID}` : "/travel";
+    }
+    return reviewQuery ? `/travel/offers/${offerId}?${reviewQuery}` : `/travel/offers/${offerId}`;
+  }, [offerId, reviewQuery]);
+
+  const searchHref = useMemo(() => {
+    return reviewQuery ? `/travel?${reviewQuery}#${SEARCH_SECTION_ID}` : "/travel";
+  }, [reviewQuery]);
+
+  const totalAmount = useMemo(() => {
+    if (!offer) return 0;
+    return parseAmount(offer.pricing?.display_total_amount ?? offer.pricing?.base_total_amount);
+  }, [offer]);
+
+  const perTraveller = passengerCount > 0 ? totalAmount / passengerCount : totalAmount;
+  const offerCurrency = offer?.pricing?.currency;
 
   useEffect(() => {
     if (!offerId) {
@@ -136,6 +200,11 @@ export default function Checkout({searchParams}: CheckoutProps) {
   const missingContact = !contact.email || !contact.phone_number;
 
   const canSubmit = !missingPassengerDetails && !missingContact && !booking && !loadingOffer && !!offer;
+  const currentStep = bookingResult ? 4 : 3;
+  const bookingTotal = bookingResult
+    ? parseAmount(bookingResult.pricing?.display_total_amount ?? bookingResult.pricing?.base_total_amount)
+    : 0;
+  const bookingCurrency = bookingResult?.pricing?.currency;
 
   function updatePassenger(index: number, field: keyof PassengerForm, value: string) {
     setPassengers(prev =>
@@ -193,20 +262,35 @@ export default function Checkout({searchParams}: CheckoutProps) {
         body: JSON.stringify(payload),
       });
 
+      const rawText = await response.text();
+      let body: any = null;
+      if (rawText) {
+        try {
+          body = JSON.parse(rawText);
+        } catch (parseError) {
+          console.error("Failed to parse booking response", parseError, rawText);
+        }
+      }
+
       if (!response.ok) {
-        const body = await response.json().catch(() => ({error: "Booking failed"}));
-        const {error} = body;
         let message = "Booking failed. Please review passenger details.";
-        if (typeof error === "string") {
-          message = error;
-        } else if (Array.isArray(error) && error.length) {
-          message = error[0]?.message ?? message;
+        if (body && typeof body.error === "string") {
+          message = body.error;
+        } else if (body && Array.isArray(body.error) && body.error.length) {
+          message = body.error[0]?.message ?? message;
+        } else if (rawText && !body) {
+          message = rawText;
         }
         throw new Error(message);
       }
 
-      const data = await response.json();
-      setBookingResult(data);
+      if (!body) {
+        throw new Error(
+          "Booking succeeded but we couldn't read the confirmation. Please contact MapleLeed support.",
+        );
+      }
+
+      setBookingResult(body);
     } catch (error: any) {
       console.error(error);
       setBookingError(error?.message ?? "Booking failed. Please try again.");
@@ -219,13 +303,44 @@ export default function Checkout({searchParams}: CheckoutProps) {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="px-6 pb-24 pt-24 w-full">
-        <section className="max-w-4xl mx-auto space-y-8">
+        <section className="mx-auto max-w-4xl space-y-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Link
+              href={reviewHref}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:text-primary/80"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to itinerary
+            </Link>
+            <Link
+              href={searchHref}
+              className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+            >
+              Modify search
+            </Link>
+          </div>
+
+          <TravelStepIndicator currentStep={currentStep} />
+
           <div className="space-y-2">
-            <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
+            <h1 className="text-3xl font-headline font-bold">Passenger details & checkout</h1>
             <p className="text-muted-foreground">
-              Enter traveller details exactly as they appear on passports. We’ll reserve your seats using
-              our Duffel agency credentials.
+              We’ll issue your tickets with Duffel and bundle MapleLeed concierge support into one transparent price.
             </p>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {searchContext.origin && searchContext.destination && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+                  {searchContext.origin} → {searchContext.destination}
+                </span>
+              )}
+              {searchContext.departureDate && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+                  Depart {new Date(searchContext.departureDate).toLocaleDateString()}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+                {passengerCount === 1 ? "1 traveller" : `${passengerCount} travellers`}
+              </span>
+            </div>
           </div>
 
           {loadError && (
@@ -236,23 +351,32 @@ export default function Checkout({searchParams}: CheckoutProps) {
 
           {offer && (
             <div className="border border-border rounded-xl bg-card shadow-md p-6 space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm uppercase tracking-wide text-muted-foreground">
                     {offer.owner?.iata_code}
                   </p>
                   <h2 className="text-xl font-semibold">{offer.owner?.name ?? "Selected flight"}</h2>
-                  <p className="text-sm text-muted-foreground">Travellers: {passengerCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {passengerCount === 1 ? "1 traveller" : `${passengerCount} travellers`}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total including concierge fee</p>
+                <div className="space-y-1 text-right">
+                  <p className="text-sm text-muted-foreground">All-in MapleLeed fare</p>
                   <p className="text-3xl font-headline font-bold">
-                    {offer.pricing.display_total_amount} {offer.pricing.currency}
+                    {formatCurrency(totalAmount, offerCurrency)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Airline fare {offer.pricing.base_total_amount} + {offer.pricing.markup_total}
+                    {formatCurrency(perTraveller, offerCurrency)} per traveller · MapleLeed concierge care included
                   </p>
                 </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                <ShieldCheck className="mt-1 h-4 w-4 text-primary" />
+                <p>
+                  MapleLeed manages airline ticketing through Duffel and keeps a concierge expert beside you before, during,
+                  and after your trip.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -441,13 +565,17 @@ export default function Checkout({searchParams}: CheckoutProps) {
           </form>
 
           {bookingResult && (
-            <div className="border border-border rounded-xl bg-muted/20 p-6 space-y-3">
-              <h2 className="text-xl font-semibold">Booking confirmed</h2>
-              <p className="text-muted-foreground text-sm">
-                Your Duffel order is confirmed. Share this booking reference with the traveller and keep an
-                eye on your inbox for e-ticket documents.
-              </p>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-1 h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold">Booking confirmed</h2>
+                  <p className="text-sm text-muted-foreground">
+                    MapleLeed is emailing your itinerary and concierge welcome pack within the next few minutes.
+                  </p>
+                </div>
+              </div>
+              <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="font-medium text-foreground">Order ID</dt>
                   <dd className="text-muted-foreground">{bookingResult.order_id}</dd>
@@ -461,15 +589,9 @@ export default function Checkout({searchParams}: CheckoutProps) {
                   <dd className="text-muted-foreground">{bookingResult.status}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-foreground">Charged to airline</dt>
+                  <dt className="font-medium text-foreground">Total paid</dt>
                   <dd className="text-muted-foreground">
-                    {bookingResult.pricing?.base_total_amount} {bookingResult.pricing?.currency}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-foreground">Total collected</dt>
-                  <dd className="text-muted-foreground">
-                    {bookingResult.pricing?.display_total_amount} {bookingResult.pricing?.currency}
+                    {formatCurrency(bookingTotal, bookingCurrency)}
                   </dd>
                 </div>
               </dl>
@@ -485,6 +607,17 @@ export default function Checkout({searchParams}: CheckoutProps) {
                   </ul>
                 </div>
               )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Need anything else? Message your MapleLeed concierge and we’ll handle seats, baggage, or itinerary changes.
+                </p>
+                <Link
+                  href={searchHref}
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+                >
+                  Back to travel search
+                </Link>
+              </div>
             </div>
           )}
 

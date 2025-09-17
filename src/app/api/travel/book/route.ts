@@ -107,6 +107,8 @@ export async function POST(req: Request) {
     });
 
     const pricing = applyMarkup(freshOffer.data, passengers.length).pricing;
+    const baseChargeAmount = Number.parseFloat(String(freshOffer.data.total_amount ?? '0'));
+    const conciergeChargeAmount = Number.parseFloat(String(pricing.markup_total ?? '0'));
 
     return NextResponse.json({
       order_id: order.data.id,
@@ -114,6 +116,15 @@ export async function POST(req: Request) {
       status: order.data.status,
       documents: order.data.documents ?? [],
       pricing,
+      allocation: {
+        airline: Number.isFinite(baseChargeAmount)
+          ? baseChargeAmount.toFixed(2)
+          : pricing.base_total_amount,
+        concierge: Number.isFinite(conciergeChargeAmount)
+          ? conciergeChargeAmount.toFixed(2)
+          : '0.00',
+        currency: pricing.currency,
+      },
     });
   } catch (error: any) {
     console.error('Booking failed', error);
