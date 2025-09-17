@@ -4,8 +4,7 @@ import type { FlightOffer, FlightSlice } from '@/lib/duffel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import DuffelComponents from '@duffel/components';
-import type { CardPaymentProps } from '@duffel/components';
+import { CardPayment, type CardPaymentProps } from '@duffel/components';
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
@@ -73,10 +72,6 @@ const passengerInitialState: Passenger = {
   email: '',
   phone_number: '',
   type: 'adult',
-};
-
-const { CardPayment } = DuffelComponents as {
-  CardPayment: React.FC<CardPaymentProps>;
 };
 
 const formatCurrency = (amount: number, currency: string) =>
@@ -594,8 +589,8 @@ const BookingDialog = ({
                     <CardPayment
                       key={paymentIntent.id}
                       duffelPaymentIntentClientToken={paymentIntent.clientToken}
-                      successfulPaymentHandler={() => onSuccessfulPayment(paymentIntent.id)}
-                      errorPaymentHandler={(stripeError) => {
+                      onSuccessfulPayment={() => onSuccessfulPayment(paymentIntent.id)}
+                      onFailedPayment={(stripeError) => {
                         setError(stripeError?.message ?? 'Payment failed');
                         onBookingError(stripeError);
                       }}
