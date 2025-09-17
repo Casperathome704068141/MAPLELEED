@@ -1,95 +1,504 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import {ChangeEvent, FormEvent, useEffect, useMemo, useState} from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import type {OfferSummary, SegmentSummary} from "@/lib/travel";
 
-export default function Checkout({ searchParams }: { searchParams: { offer: string } }) {
-  const [offer, setOffer] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const offerId = searchParams.offer;
+type PassengerForm = {
+  title: string;
+  given_name: string;
+  family_name: string;
+  born_on: string;
+  email: string;
+  phone_number: string;
+};
+
+type ContactForm = {
+  email: string;
+  phone_number: string;
+};
+
+const formatter = new Intl.DateTimeFormat("en", {
+  weekday: "short",
+  month: "short",
+  day: "2-digit",
+  hour: "numeric",
+  minute: "numeric",
+});
+
+function formatDate(value?: string | null) {
+  if (!value) return "";
+  try {
+    return formatter.format(new Date(value));
+  } catch (error) {
+    return value ?? "";
+  }
+}
+
+function formatDuration(duration?: string | null) {
+  if (!duration) return "";
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return duration;
+  const [, hours, minutes] = match;
+  const parts: string[] = [];
+  if (hours) parts.push(`${hours}h`);
+  if (minutes) parts.push(`${minutes}m`);
+  return parts.join(" ");
+}
+
+function segmentKey(segment: SegmentSummary, index: number) {
+  return segment.id || `${segment.marketing_flight}-${index}`;
+}
+
+function createPassengerForms(count: number): PassengerForm[] {
+  return Array.from({length: count}).map(() => ({
+    title: "mr",
+    given_name: "",
+    family_name: "",
+    born_on: "",
+    email: "",
+    phone_number: "",
+  }));
+}
+
+type CheckoutProps = {
+  searchParams: {
+    offer?: string;
+    pax?: string;
+  };
+};
+
+export default function Checkout({searchParams}: CheckoutProps) {
+  const offerId = searchParams.offer ?? "";
+  const passengerCount = useMemo(
+    () => Math.max(1, Number(searchParams.pax ?? "1")),
+    [searchParams.pax],
+  );
+
+  const [offer, setOffer] = useState<OfferSummary | null>(null);
+  const [loadingOffer, setLoadingOffer] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [passengers, setPassengers] = useState<PassengerForm[]>(() =>
+    createPassengerForms(passengerCount),
+  );
+  const [contact, setContact] = useState<ContactForm>({email: "", phone_number: ""});
+  const [booking, setBooking] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingResult, setBookingResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (!offerId) {
+      setLoadError("No offer selected. Please return to the travel search.");
+      setOffer(null);
+    }
+  }, [offerId]);
+
+  useEffect(() => {
+    setPassengers(prev => {
+      if (prev.length === passengerCount) return prev;
+      return createPassengerForms(passengerCount);
+    });
+  }, [passengerCount]);
 
   useEffect(() => {
     if (!offerId) return;
-    setLoading(true);
-    setError(null);
-    fetch(process.env.NEXT_PUBLIC_API_URL + "/api/offers/" + offerId)
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to load offer details.');
-        return r.json();
+    setLoadingOffer(true);
+    setLoadError(null);
+    fetch(`/api/travel/offers/${offerId}?pax=${passengerCount}`)
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(body => {
+            throw new Error(body?.error || "Failed to load offer details");
+          });
+        }
+        return response.json();
       })
-      .then(setOffer)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [offerId]);
+      .then(data => {
+        setOffer(data.offer);
+      })
+      .catch(error => {
+        console.error(error);
+        setLoadError(error.message || "Unable to load offer details.");
+      })
+      .finally(() => setLoadingOffer(false));
+  }, [offerId, passengerCount]);
 
-  async function book() {
-    setLoading(true);
-    setError(null);
-    // This is hardcoded for the demo as per the user's blueprint.
-    // In a real app, you would collect this information from the user.
-    const passengers = [{
-      type: "adult",
-      title: "mr",
-      given_name: "John",
-      family_name: "Doe",
-      born_on: "1990-05-12",
-      email: "john.doe@example.com", // Ensure a valid email
-      phone_number: "+14165550123"
-    }];
+  const missingPassengerDetails = passengers.some(passenger =>
+    !passenger.given_name ||
+    !passenger.family_name ||
+    !passenger.born_on ||
+    !passenger.email ||
+    !passenger.phone_number,
+  );
 
-    const contact = { email: "john.doe@example.com", phone_number: "+14165550123" };
+  const missingContact = !contact.email || !contact.phone_number;
+
+  const canSubmit = !missingPassengerDetails && !missingContact && !booking && !loadingOffer && !!offer;
+
+  function updatePassenger(index: number, field: keyof PassengerForm, value: string) {
+    setPassengers(prev =>
+      prev.map((passenger, idx) =>
+        idx === index
+          ? {
+              ...passenger,
+              [field]: value,
+            }
+          : passenger,
+      ),
+    );
+  }
+
+  function onPassengerChange(index: number, field: keyof PassengerForm) {
+    return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value = event.currentTarget.value;
+      updatePassenger(index, field, value);
+      if (index === 0 && (field === "email" || field === "phone_number")) {
+        setContact(prev => ({
+          ...prev,
+          [field]: prev[field] ? prev[field] : value,
+        }));
+      }
+    };
+  }
+
+  async function book(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!offer || !canSubmit) return;
+
+    setBooking(true);
+    setBookingError(null);
+    setBookingResult(null);
 
     try {
-        const r = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/book-with-balance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ offer_id: offerId, passengers, contact }),
-        });
-        const data = await r.json();
-        if (data.error) {
-            // This will catch errors from the Duffel API like "invalid_passenger_name"
-            const errorMessage = typeof data.error === 'object' ? JSON.stringify(data.error) : data.error;
-            throw new Error(errorMessage);
-        }
-        alert(data.order ? "Booked! Order " + data.order.id : "Booking failed");
-    } catch (error: any) {
-        console.error(error);
-        setError(`Booking failed: ${error.message}`);
-    } finally {
-        setLoading(false);
-    }
-  }
-  
-  const renderContent = () => {
-    if (loading && !offer) return <p className="text-center">Loading offer details...</p>;
-    if (error) return <p className="text-center text-red-500">{error}</p>;
-    if (!offer) return <p className="text-center">Offer not found or invalid.</p>;
+      const payload = {
+        offerId,
+        passengers: passengers.map((passenger, index) => ({
+          id: `pas_${index + 1}`,
+          type: "adult",
+          title: passenger.title,
+          given_name: passenger.given_name,
+          family_name: passenger.family_name,
+          born_on: passenger.born_on,
+          email: passenger.email,
+          phone_number: passenger.phone_number,
+        })),
+        contact,
+      };
 
-    return (
-        <div className="border p-6 rounded-lg bg-card shadow-lg">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">Offer Details</h2>
-            <p className="text-muted-foreground">Offer ID: {offerId}</p>
-          </div>
-          <div className="text-2xl font-bold font-headline mb-6">
-            Total Price: {offer.pricing.display_total_amount} {offer.pricing.currency}
-          </div>
-          <p className="text-sm text-muted-foreground mb-6">You are about to book a flight with a hardcoded passenger, "John Doe". The booking will be made using the Duffel Balance method.</p>
-          {error && <div className="text-red-500 mb-4 p-3 border border-red-500 bg-red-50 rounded-md">{error}</div>}
-          <button onClick={book} disabled={loading} className="w-full bg-primary text-primary-foreground p-3 rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70">
-            {loading ? 'Booking...' : 'Confirm & Book'}
-            </button>
-        </div>
-    );
+      const response = await fetch("/api/travel/book", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({error: "Booking failed"}));
+        const {error} = body;
+        let message = "Booking failed. Please review passenger details.";
+        if (typeof error === "string") {
+          message = error;
+        } else if (Array.isArray(error) && error.length) {
+          message = error[0]?.message ?? message;
+        }
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      setBookingResult(data);
+    } catch (error: any) {
+      console.error(error);
+      setBookingError(error?.message ?? "Booking failed. Please try again.");
+    } finally {
+      setBooking(false);
+    }
   }
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="p-6 max-w-2xl mx-auto pt-24 w-full">
-        <h1 className="text-3xl font-headline font-bold mb-6">Confirm Your Booking</h1>
-        {renderContent()}
+      <main className="px-6 pb-24 pt-24 w-full">
+        <section className="max-w-4xl mx-auto space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
+            <p className="text-muted-foreground">
+              Enter traveller details exactly as they appear on passports. We’ll reserve your seats using
+              our Duffel agency credentials. Our concierge fee is tiered: $75 per traveller when the
+              airline fare is under $999 per person and $100 once it reaches $999 or more.
+            </p>
+          </div>
+
+          {loadError && (
+            <div className="border border-destructive/50 bg-destructive/10 text-destructive rounded-lg p-4">
+              {loadError}
+            </div>
+          )}
+
+          {offer && (
+            <div className="border border-border rounded-xl bg-card shadow-md p-6 space-y-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                    {offer.owner?.iata_code}
+                  </p>
+                  <h2 className="text-xl font-semibold">{offer.owner?.name ?? "Selected flight"}</h2>
+                  <p className="text-sm text-muted-foreground">Travellers: {passengerCount}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total including concierge fee</p>
+                  <p className="text-3xl font-headline font-bold">
+                    {offer.pricing.display_total_amount} {offer.pricing.currency}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Airline fare {offer.pricing.base_total_amount} {offer.pricing.currency} + concierge fee
+                    {" "}
+                    {offer.pricing.markup_total} {offer.pricing.currency} ({offer.pricing.markup_per_ticket} per
+                    traveller)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Works out to {offer.pricing.display_per_ticket_amount} {offer.pricing.currency} per traveller
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {offer.slices.map(slice => (
+                  <div key={slice.id} className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="font-medium">
+                        {slice.origin} → {slice.destination}
+                      </p>
+                      <span className="text-sm text-muted-foreground">{formatDuration(slice.duration)}</span>
+                    </div>
+                    <ol className="mt-3 space-y-3">
+                      {slice.segments.map((segment, index) => (
+                        <li key={segmentKey(segment, index)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <p className="font-semibold">
+                              {formatDate(segment.departing_at)} → {formatDate(segment.arriving_at)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {segment.origin} to {segment.destination}
+                            </p>
+                          </div>
+                          <div className="text-sm text-muted-foreground text-right">
+                            <p>{segment.carrier_name}</p>
+                            {segment.marketing_flight && <p>{segment.marketing_flight}</p>}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={book} className="border border-border rounded-xl bg-card shadow-md p-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Passenger information</h2>
+              <p className="text-sm text-muted-foreground">
+                We require a valid email and phone number for each traveller in case the airline needs to
+                reach you.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {passengers.map((passenger, index) => (
+                <div key={index} className="rounded-lg border border-border/60 bg-muted/10 p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Traveller {index + 1}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="flex flex-col">
+                      <label htmlFor={`title-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Title
+                      </label>
+                      <select
+                        id={`title-${index}`}
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.title}
+                        onChange={onPassengerChange(index, "title")}
+                      >
+                        <option value="mr">Mr</option>
+                        <option value="mrs">Mrs</option>
+                        <option value="ms">Ms</option>
+                        <option value="miss">Miss</option>
+                        <option value="dr">Dr</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor={`given-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Given name
+                      </label>
+                      <input
+                        id={`given-${index}`}
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.given_name}
+                        onChange={onPassengerChange(index, "given_name")}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor={`family-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Family name
+                      </label>
+                      <input
+                        id={`family-${index}`}
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.family_name}
+                        onChange={onPassengerChange(index, "family_name")}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor={`dob-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Date of birth
+                      </label>
+                      <input
+                        id={`dob-${index}`}
+                        type="date"
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.born_on}
+                        onChange={onPassengerChange(index, "born_on")}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label htmlFor={`email-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Email
+                      </label>
+                      <input
+                        id={`email-${index}`}
+                        type="email"
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.email}
+                        onChange={onPassengerChange(index, "email")}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor={`phone-${index}`} className="text-sm text-muted-foreground mb-1">
+                        Phone number
+                      </label>
+                      <input
+                        id={`phone-${index}`}
+                        type="tel"
+                        className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                        value={passenger.phone_number}
+                        onChange={onPassengerChange(index, "phone_number")}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold">Primary contact</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label htmlFor="contact-email" className="text-sm text-muted-foreground mb-1">
+                    Contact email
+                  </label>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                    value={contact.email}
+                    onChange={event => setContact(prev => ({...prev, email: event.currentTarget.value}))}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="contact-phone" className="text-sm text-muted-foreground mb-1">
+                    Contact phone number
+                  </label>
+                  <input
+                    id="contact-phone"
+                    type="tel"
+                    className="border border-input bg-background rounded-md px-3 py-2 h-11"
+                    value={contact.phone_number}
+                    onChange={event =>
+                      setContact(prev => ({...prev, phone_number: event.currentTarget.value}))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {bookingError && (
+              <div className="border border-destructive/50 bg-destructive/10 text-destructive rounded-lg p-4">
+                {bookingError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
+            >
+              {booking ? "Confirming…" : "Confirm & book"}
+            </button>
+          </form>
+
+          {bookingResult && (
+            <div className="border border-border rounded-xl bg-muted/20 p-6 space-y-3">
+              <h2 className="text-xl font-semibold">Booking confirmed</h2>
+              <p className="text-muted-foreground text-sm">
+                Your Duffel order is confirmed. Share this booking reference with the traveller and keep an
+                eye on your inbox for e-ticket documents.
+              </p>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="font-medium text-foreground">Order ID</dt>
+                  <dd className="text-muted-foreground">{bookingResult.order_id}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-foreground">Booking reference</dt>
+                  <dd className="text-muted-foreground">{bookingResult.booking_reference}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-foreground">Status</dt>
+                  <dd className="text-muted-foreground">{bookingResult.status}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-foreground">Charged to airline</dt>
+                  <dd className="text-muted-foreground">
+                    {bookingResult.pricing?.base_total_amount} {bookingResult.pricing?.currency}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-foreground">Total collected</dt>
+                  <dd className="text-muted-foreground">
+                    {bookingResult.pricing?.display_total_amount} {bookingResult.pricing?.currency}
+                  </dd>
+                </div>
+              </dl>
+              {Array.isArray(bookingResult.documents) && bookingResult.documents.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Travel documents</h3>
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {bookingResult.documents.map((doc: any) => (
+                      <li key={doc.id ?? doc.unique_identifier}>
+                        {doc.type?.toUpperCase()}: {doc.unique_identifier ?? "Awaiting issuance"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {loadingOffer && !offer && (
+            <div className="border border-border rounded-xl bg-card shadow animate-pulse h-48" />
+          )}
+        </section>
       </main>
       <Footer />
     </div>
