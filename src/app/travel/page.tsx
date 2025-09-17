@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -12,8 +13,6 @@ import {
   Loader2,
   Info,
   PlaneTakeoff,
-  PlaneLanding,
-  Headset,
   Ticket,
   Compass,
   MapPin,
@@ -33,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
@@ -611,3 +609,5 @@ export default function TravelPage() {
     </div>
   );
 }
+
+    
