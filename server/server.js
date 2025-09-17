@@ -7,7 +7,11 @@ import { applyMarkup } from "./pricing.js";
 import Stripe from "stripe";
 
 const app = express();
-app.use(cors({ origin: process.env.APP_URL?.split(",") ?? true }));
+
+// A more open CORS policy for development.
+// In production, you should restrict this to your specific frontend domain.
+app.use(cors());
+
 app.use(express.json());
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
