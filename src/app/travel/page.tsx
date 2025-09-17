@@ -18,6 +18,8 @@ import {
   MapPin,
   Mail,
   Phone,
+  Headset,
+  PlaneLanding,
 } from 'lucide-react';
 import { add, format } from 'date-fns';
 
@@ -39,6 +41,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { FlightOffer } from '@/lib/duffel';
 import { FlightResults, type FlightSearchDetails } from '@/components/flight-results';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 type CabinClass = FlightSearchDetails['cabinClass'];
 
@@ -609,5 +612,3 @@ export default function TravelPage() {
     </div>
   );
 }
-
-    
