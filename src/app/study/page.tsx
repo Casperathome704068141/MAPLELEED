@@ -37,7 +37,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useFormState, useFormStatus } from 'react-dom';
-import { handleFindStudyOptions, bookConsultation, bookingInitialState } from '@/app/actions';
+import { handleFindStudyOptions, bookConsultation } from '@/app/actions';
 import type { BookingFormState } from '@/app/actions';
 import type { FindStudyOptionsOutput } from '@/ai/flows/find-study-options';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -60,6 +60,10 @@ const initialStudyState: {
   message: '',
   errors: null,
   data: null,
+};
+
+const bookingInitialState: BookingFormState = {
+  status: 'idle',
 };
 
 

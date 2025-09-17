@@ -33,10 +33,6 @@ export type BookingFormState = {
   appointment?: AppointmentRecord;
 };
 
-export const bookingInitialState: BookingFormState = {
-  status: 'idle',
-};
-
 function combineDateAndTime(date: string, timeLabel: string): string | null {
   const [yearStr, monthStr, dayStr] = date.split('-');
   const year = Number(yearStr);
@@ -136,7 +132,7 @@ export async function handleFindStudyOptions(prevState: any, formData: FormData)
 }
 
 export async function bookConsultation(
-  prevState: BookingFormState = bookingInitialState,
+  prevState: BookingFormState,
   formData: FormData,
 ): Promise<BookingFormState> {
   const validatedFields = bookingSchema.safeParse({
