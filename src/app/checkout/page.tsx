@@ -1,6 +1,8 @@
+
 "use client";
 
 import {ChangeEvent, FormEvent, useEffect, useMemo, useState} from "react";
+import { useSearchParams } from 'next/navigation';
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
@@ -62,18 +64,12 @@ function createPassengerForms(count: number): PassengerForm[] {
   }));
 }
 
-type CheckoutProps = {
-  searchParams: {
-    offer?: string;
-    pax?: string;
-  };
-};
-
-export default function Checkout({searchParams}: CheckoutProps) {
-  const offerId = searchParams.offer ?? "";
+export default function Checkout() {
+  const searchParams = useSearchParams();
+  const offerId = searchParams.get("offer") ?? "";
   const passengerCount = useMemo(
-    () => Math.max(1, Number(searchParams.pax ?? "1")),
-    [searchParams.pax],
+    () => Math.max(1, Number(searchParams.get("pax") ?? "1")),
+    [searchParams],
   );
 
   const [offer, setOffer] = useState<OfferSummary | null>(null);
@@ -106,7 +102,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
     if (!offerId) return;
     setLoadingOffer(true);
     setLoadError(null);
-    fetch(`/api/travel/offers/${offerId}?pax=${passengerCount}`)
+    fetch(`/api/offers/${offerId}?pax=${passengerCount}`)
       .then(response => {
         if (!response.ok) {
           return response.json().then(body => {
@@ -116,7 +112,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
         return response.json();
       })
       .then(data => {
-        setOffer(data.offer);
+        setOffer(data);
       })
       .catch(error => {
         console.error(error);
@@ -173,7 +169,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
 
     try {
       const payload = {
-        offerId,
+        offer_id: offerId,
         passengers: passengers.map((passenger, index) => ({
           id: `pas_${index + 1}`,
           type: "adult",
@@ -187,7 +183,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
         contact,
       };
 
-      const response = await fetch("/api/travel/book", {
+      const response = await fetch(`/api/book-with-balance`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
@@ -206,7 +202,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
       }
 
       const data = await response.json();
-      setBookingResult(data);
+      setBookingResult(data.order);
     } catch (error: any) {
       console.error(error);
       setBookingError(error?.message ?? "Booking failed. Please try again.");
@@ -269,10 +265,10 @@ export default function Checkout({searchParams}: CheckoutProps) {
                         <li key={segmentKey(segment, index)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
                             <p className="font-semibold">
-                              {formatDate(segment.departing_at)} → {formatDate(segment.arriving_at)}
+                              {formatDate(segment.dep)} → {formatDate(segment.arr)}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {segment.origin} to {segment.destination}
+                              {slice.origin} to {slice.destination}
                             </p>
                           </div>
                           <div className="text-sm text-muted-foreground text-right">
@@ -450,7 +446,7 @@ export default function Checkout({searchParams}: CheckoutProps) {
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <dt className="font-medium text-foreground">Order ID</dt>
-                  <dd className="text-muted-foreground">{bookingResult.order_id}</dd>
+                  <dd className="text-muted-foreground">{bookingResult.id}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-foreground">Booking reference</dt>
@@ -458,18 +454,18 @@ export default function Checkout({searchParams}: CheckoutProps) {
                 </div>
                 <div>
                   <dt className="font-medium text-foreground">Status</dt>
-                  <dd className="text-muted-foreground">{bookingResult.status}</dd>
+                  <dd className="text-muted-foreground">{bookingResult.status || 'Confirmed'}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-foreground">Charged to airline</dt>
                   <dd className="text-muted-foreground">
-                    {bookingResult.pricing?.base_total_amount} {bookingResult.pricing?.currency}
+                    {offer.pricing.base_total_amount} {offer.pricing.currency}
                   </dd>
                 </div>
                 <div>
                   <dt className="font-medium text-foreground">Total collected</dt>
                   <dd className="text-muted-foreground">
-                    {bookingResult.pricing?.display_total_amount} {bookingResult.pricing?.currency}
+                    {offer.pricing.display_total_amount} {offer.pricing.currency}
                   </dd>
                 </div>
               </dl>
@@ -497,3 +493,5 @@ export default function Checkout({searchParams}: CheckoutProps) {
     </div>
   );
 }
+
+    
