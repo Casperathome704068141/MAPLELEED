@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState, useActionState} from "react";
@@ -107,13 +108,13 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
       className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
     >
-      {pending ? "Reserving…" : "Reserve Itinerary"}
-    </button>
+      {pending ? (<><Loader2 className="animate-spin" /> Reserving...</>) : "Reserve Itinerary"}
+    </Button>
   );
 }
 
@@ -140,16 +141,25 @@ function CheckoutContent() {
         return { status: 'error', message: 'Offer details are not available.' };
      }
 
-      const passengersPayload = passengers.map((_, index) => ({
+      const passengersPayload = passengers.map((p, index) => {
+        const title = formData.get(`title-${index}`) as string;
+        const given_name = formData.get(`given-${index}`) as string;
+        const family_name = formData.get(`family-${index}`) as string;
+        const born_on = formData.get(`dob-${index}`) as string;
+        const email = formData.get(`email-${index}`) as string;
+        const phone_number = formData.get(`phone-${index}`) as string;
+        
+        return {
           id: `pas_${index + 1}`,
           type: "adult",
-          title: formData.get(`title-${index}`) as string,
-          given_name: formData.get(`given-${index}`) as string,
-          family_name: formData.get(`family-${index}`) as string,
-          born_on: formData.get(`dob-${index}`) as string,
-          email: formData.get(`email-${index}`) as string,
-          phone_number: formData.get(`phone-${index}`) as string,
-      }));
+          title,
+          given_name,
+          family_name,
+          born_on,
+          email,
+          phone_number,
+        };
+      });
 
       const contactPayload = {
           email: formData.get('contact-email') as string,
@@ -299,7 +309,7 @@ function CheckoutContent() {
           <div className="space-y-2">
             <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
             <p className="text-muted-foreground">
-              Enter traveller details exactly as they appear on passports. We’ll reserve your seats and then redirect you to Stripe to complete payment securely.
+              Enter traveller details exactly as they appear on passports. We’ll reserve your seats and then our team will be in touch to handle payment and ticketing.
             </p>
           </div>
 
