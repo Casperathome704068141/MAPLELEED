@@ -584,7 +584,7 @@ function StudyResults({ results }: { results: FindStudyOptionsOutput }) {
 
 
 function AppointmentSection() {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const { toast } = useToast();
@@ -595,6 +595,11 @@ function AppointmentSection() {
     appointmentId?: string;
     message?: string;
   }>({ status: bookingInitialState.status });
+
+  React.useEffect(() => {
+    // This runs only on the client, after hydration
+    setDate(new Date());
+  }, []);
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);

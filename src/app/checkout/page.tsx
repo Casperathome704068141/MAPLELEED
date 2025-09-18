@@ -1,7 +1,8 @@
 
 "use client";
 
-import {ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState} from "react";
+import {ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState, useActionState} from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import {useSearchParams} from 'next/navigation';
 import {ArrowLeft, CheckCircle2, Loader2} from "lucide-react";
@@ -37,6 +38,18 @@ type BookingResult = {
   status?: string;
   documents: DuffelDocument[];
   pricing: OfferSummary["pricing"];
+};
+
+type BookingState = {
+  status: 'idle' | 'success' | 'error';
+  result?: BookingResult | null;
+  message?: string;
+}
+
+const initialBookingState: BookingState = {
+  status: 'idle',
+  result: null,
+  message: '',
 };
 
 const formatter = new Intl.DateTimeFormat("en", {
@@ -82,6 +95,21 @@ function createPassengerForms(count: number): PassengerForm[] {
   }));
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
+    >
+      {pending ? "Reserving…" : "Reserve Itinerary"}
+    </button>
+  );
+}
+
+
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offer") ?? "";
@@ -98,13 +126,76 @@ function CheckoutContent() {
     createPassengerForms(passengerCount),
   );
   const [contact, setContact] = useState<ContactForm>({email: "", phone_number: ""});
-  const [booking, setBooking] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
-  const [creatingPaymentSession, setCreatingPaymentSession] = useState(false);
+  
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSessionUrl, setPaymentSessionUrl] = useState<string | null>(null);
+  
+  const [bookingState, bookAction] = useActionState(async (prevState: BookingState, formData: FormData): Promise<BookingState> => {
+     if (!offer) {
+        return { status: 'error', message: 'Offer details are not available.' };
+     }
 
+      const passengersPayload = passengers.map((_, index) => ({
+          id: `pas_${index + 1}`,
+          type: "adult",
+          title: formData.get(`title-${index}`) as string,
+          given_name: formData.get(`given-${index}`) as string,
+          family_name: formData.get(`family-${index}`) as string,
+          born_on: formData.get(`dob-${index}`) as string,
+          email: formData.get(`email-${index}`) as string,
+          phone_number: formData.get(`phone-${index}`) as string,
+      }));
+
+      const contactPayload = {
+          email: formData.get('contact-email') as string,
+          phone_number: formData.get('contact-phone') as string,
+      };
+
+      try {
+        const payload = {
+          offerId,
+          passengers: passengersPayload,
+          contact: contactPayload,
+        };
+
+        const response = await fetch(`/api/travel/book`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload),
+        });
+
+        const body = await response.json().catch(() => ({error: "Booking failed"}));
+
+        if (!response.ok) {
+          const {error} = body;
+          let message = "Booking failed. Please review passenger details.";
+          if (typeof error === "string") {
+            message = error;
+          } else if (Array.isArray(error) && error.length) {
+            message = error[0]?.message ?? message;
+          }
+          throw new Error(message);
+        }
+
+        const resultData = {
+          order_id: body.order_id,
+          booking_reference: body.booking_reference,
+          status: body.status,
+          documents: Array.isArray(body.documents) ? body.documents : [],
+          pricing: body.pricing ?? offer.pricing,
+        };
+
+        return { status: 'success', result: resultData };
+
+      } catch (error: any) {
+        console.error(error);
+        return { status: 'error', message: error?.message ?? "Booking failed. Please try again." };
+      }
+  }, initialBookingState);
+
+
+  const bookingResult = bookingState.result;
+  const bookingError = bookingState.status === 'error' ? bookingState.message : null;
   const currentStep = bookingResult ? 3 : 2;
 
   useEffect(() => {
@@ -158,7 +249,7 @@ function CheckoutContent() {
 
   const missingContact = !contact.email || !contact.phone_number;
 
-  const canSubmit = !missingPassengerDetails && !missingContact && !booking && !loadingOffer && !!offer;
+  const canSubmit = !missingPassengerDetails && !missingContact && !loadingOffer && !!offer;
 
   function updatePassenger(index: number, field: keyof PassengerForm, value: string) {
     setPassengers(prev =>
@@ -186,119 +277,6 @@ function CheckoutContent() {
         }));
       }
     };
-  }
-
-  async function book(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!offer) return;
-
-    const formData = new FormData(event.currentTarget);
-    const passengersPayload = passengers.map((_, index) => ({
-      id: `pas_${index + 1}`,
-      type: "adult",
-      title: formData.get(`title-${index}`) as string,
-      given_name: formData.get(`given-${index}`) as string,
-      family_name: formData.get(`family-${index}`) as string,
-      born_on: formData.get(`dob-${index}`) as string,
-      email: formData.get(`email-${index}`) as string,
-      phone_number: formData.get(`phone-${index}`) as string,
-    }));
-
-    const contactPayload = {
-        email: formData.get('contact-email') as string,
-        phone_number: formData.get('contact-phone') as string,
-    };
-
-    setBooking(true);
-    setBookingError(null);
-    setBookingResult(null);
-    setPaymentError(null);
-    setPaymentSessionUrl(null);
-
-    try {
-      const payload = {
-        offerId,
-        passengers: passengersPayload,
-        contact: contactPayload,
-      };
-
-      const response = await fetch(`/api/travel/book`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({error: "Booking failed"}));
-        const {error} = body;
-        let message = "Booking failed. Please review passenger details.";
-        if (typeof error === "string") {
-          message = error;
-        } else if (Array.isArray(error) && error.length) {
-          message = error[0]?.message ?? message;
-        }
-        throw new Error(message);
-      }
-
-      const data = await response.json();
-      setBookingResult({
-        order_id: data.order_id,
-        booking_reference: data.booking_reference,
-        status: data.status,
-        documents: Array.isArray(data.documents) ? data.documents : [],
-        pricing: data.pricing ?? offer.pricing,
-      });
-    } catch (error: any) {
-      console.error(error);
-      setBookingError(error?.message ?? "Booking failed. Please try again.");
-    } finally {
-      setBooking(false);
-    }
-  }
-
-  async function startPayment() {
-    if (!bookingResult) return;
-
-    setCreatingPaymentSession(true);
-    setPaymentError(null);
-
-    try {
-      const response = await fetch(`/api/payments/travel/checkout`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          orderId: bookingResult.order_id,
-          bookingReference: bookingResult.booking_reference,
-          amount: bookingResult.pricing.display_total_amount,
-          currency: bookingResult.pricing.currency,
-          offerId,
-          contact,
-        }),
-      });
-
-      const body = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message =
-          body && typeof body.error === "string"
-            ? body.error
-            : "Unable to start the payment session. Please try again.";
-        throw new Error(message);
-      }
-
-      if (body?.url) {
-        setPaymentSessionUrl(body.url);
-        window.location.href = body.url;
-        return;
-      }
-
-      throw new Error("Stripe did not return a checkout URL.");
-    } catch (error: any) {
-      const message = error?.message ?? "Unable to start the payment session. Please try again.";
-      setPaymentError(message);
-    } finally {
-      setCreatingPaymentSession(false);
-    }
   }
 
   return (
@@ -380,7 +358,7 @@ function CheckoutContent() {
             </div>
           )}
 
-          <form onSubmit={book} className="border border-border rounded-xl bg-card shadow-md p-6 space-y-6">
+          <form action={bookAction} className="border border-border rounded-xl bg-card shadow-md p-6 space-y-6">
             <div>
               <h2 className="text-xl font-semibold">Passenger information</h2>
               <p className="text-sm text-muted-foreground">
@@ -531,15 +509,9 @@ function CheckoutContent() {
               </div>
             )}
              <div className="text-center space-y-2">
-                <button
-                type="submit"
-                disabled={!canSubmit}
-                className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
-                >
-                {booking ? "Reserving…" : "Reserve & continue to payment"}
-                </button>
+                <SubmitButton />
                 <p className="text-xs text-muted-foreground">
-                    We'll confirm seat availability with Duffel first, then redirect you to Stripe to securely pay and receive your invoice instantly.
+                    This will reserve your itinerary with the airline. Payment will be handled separately by our team.
                 </p>
              </div>
           </form>
@@ -551,9 +523,7 @@ function CheckoutContent() {
                 <h2 className="text-xl font-semibold">Booking confirmed</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                Your Duffel order is confirmed. Share this booking reference with the traveller and keep an eye
-                on your inbox for e-ticket documents. Complete payment below to finalise ticketing—Stripe will
-                email you a receipt and invoice immediately after the charge succeeds.
+                Your Duffel order is confirmed with the airline. Our team will be in touch shortly to arrange payment and finalize ticketing. Keep an eye on your inbox for e-ticket documents once payment is complete.
               </p>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
@@ -592,36 +562,6 @@ function CheckoutContent() {
                   </ul>
                 </div>
               )}
-              {paymentError && (
-                <div className="border border-destructive/50 bg-destructive/10 text-destructive rounded-lg p-4">
-                  {paymentError}
-                </div>
-              )}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button
-                  type="button"
-                  onClick={startPayment}
-                  disabled={creatingPaymentSession}
-                  className="w-full sm:w-auto"
-                >
-                  {creatingPaymentSession ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparing secure payment...
-                    </>
-                  ) : (
-                    <>Pay with Stripe to issue tickets</>
-                  )}
-                </Button>
-                {paymentSessionUrl && (
-                  <p className="text-xs text-muted-foreground sm:text-right">
-                    Not redirected?{' '}
-                    <a href={paymentSessionUrl} className="underline">
-                      Open the Stripe checkout page
-                    </a>
-                    .
-                  </p>
-                )}
-              </div>
             </div>
           )}
 
