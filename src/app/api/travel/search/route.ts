@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {getDuffelClient} from '@/lib/duffel';
 import {summariseOffer} from '@/lib/travel';
+import {createSampleSearchResults} from '@/lib/sample-travel-data';
 
 type SearchPayload = {
   origin?: string;
@@ -20,15 +21,30 @@ function isValidDate(value?: string | null) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function parseAdultCount(value: unknown) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+  return Math.floor(parsed);
+}
+
 export async function POST(req: Request) {
+  let origin = '';
+  let destination = '';
+  let departureDate: string | null = null;
+  let returnDate: string | null = null;
+  let adults = 1;
+  let cabinClass = 'economy';
+
   try {
     const body: SearchPayload = await req.json();
-    const origin = normaliseLocation(body.origin);
-    const destination = normaliseLocation(body.destination);
-    const departureDate = body.departureDate?.toString();
-    const returnDate = body.returnDate?.toString() || null;
-    const adults = Math.max(1, Number(body.adults ?? 1));
-    const cabinClass = (body.cabinClass ?? 'economy').toString();
+    origin = normaliseLocation(body.origin);
+    destination = normaliseLocation(body.destination);
+    departureDate = body.departureDate?.toString() ?? null;
+    returnDate = body.returnDate?.toString() || null;
+    adults = parseAdultCount(body.adults ?? 1);
+    cabinClass = (body.cabinClass ?? 'economy').toString();
 
     if (!origin || !destination || !departureDate) {
       return NextResponse.json(
@@ -82,6 +98,29 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error('Duffel search failed', error);
+    if (origin && destination && departureDate) {
+      try {
+        const fallback = createSampleSearchResults(
+          {
+            origin,
+            destination,
+            departureDate,
+            returnDate,
+          },
+          adults,
+        );
+
+        if (fallback?.offers?.length) {
+          return NextResponse.json({
+            offerRequestId: fallback.offerRequestId,
+            passengers: adults,
+            offers: fallback.offers,
+          });
+        }
+      } catch (fallbackError) {
+        console.error('Sample search generation failed', fallbackError);
+      }
+    }
     return NextResponse.json(
       {error: error?.message ?? 'Unable to search flights right now.'},
       {status: 500},

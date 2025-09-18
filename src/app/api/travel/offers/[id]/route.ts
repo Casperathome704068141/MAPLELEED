@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {getDuffelClient} from '@/lib/duffel';
 import {summariseOffer} from '@/lib/travel';
+import {getSampleOfferById, isSampleOfferId} from '@/lib/sample-travel-data';
 
 type Params = {
   params: {id: string};
@@ -15,7 +16,15 @@ export async function GET(req: Request, {params}: Params) {
 
   try {
     const {searchParams} = new URL(req.url);
-    const pax = Math.max(1, Number(searchParams.get('pax') ?? '1'));
+    const pax = parsePassengerCount(searchParams.get('pax'));
+
+    if (isSampleOfferId(offerId)) {
+      const sample = getSampleOfferById(offerId, pax);
+      if (sample) {
+        return NextResponse.json(sample);
+      }
+      return NextResponse.json({error: 'Offer not found'}, {status: 404});
+    }
 
     const duffel = getDuffelClient();
     const offer = await duffel.offers.get(offerId, {
@@ -28,9 +37,27 @@ export async function GET(req: Request, {params}: Params) {
     });
   } catch (error: any) {
     console.error('Load offer failed', error);
+    try {
+      const {searchParams} = new URL(req.url);
+      const pax = parsePassengerCount(searchParams.get('pax'));
+      const sample = getSampleOfferById(offerId, pax);
+      if (sample) {
+        return NextResponse.json(sample);
+      }
+    } catch (fallbackError) {
+      console.error('Sample offer lookup failed', fallbackError);
+    }
     return NextResponse.json(
       {error: error?.message ?? 'Unable to load offer'},
       {status: 500},
     );
   }
+}
+
+function parsePassengerCount(value: string | null) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+  return Math.floor(parsed);
 }
