@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -46,6 +47,7 @@ import type { FindStudyOptionsOutput } from '@/ai/flows/find-study-options';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const timeSlots = [
   '09:00 AM',
@@ -224,7 +226,7 @@ function PricingSection() {
                   </DialogTrigger>
                 </CardContent>
               </Card>
-              <DialogContent className="sm:max-w-xl">
+              <DialogContent className="sm:max-w-xl grid-rows-[auto_1fr_auto] p-0 max-h-[90svh]">
                 <TierDialogContent tier={tier} addOns={studyAddOns} />
               </DialogContent>
             </Dialog>
@@ -342,92 +344,94 @@ function TierDialogContent({tier, addOns}: {tier: TierDefinition; addOns: AddOnD
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="p-6 flex-shrink-0">
         <div className="flex items-center gap-4 mb-4">
           <div className="p-3 bg-primary/10 rounded-full w-fit text-primary">{tier.icon}</div>
           <DialogTitle className="font-headline text-2xl">{tier.name} Tier</DialogTitle>
         </div>
         <DialogDescription className="text-base">{tier.fullDescription}</DialogDescription>
       </DialogHeader>
-      <div className="py-4 space-y-4">
-        <div>
-          <h4 className="font-semibold mb-2">What's Included:</h4>
-          <ul className="space-y-2">
-            {tier.features.map((feature, index) => (
-              <li key={index} className="flex items-start">
-                <Check className="w-4 h-4 mr-3 text-primary shrink-0 mt-1" />
-                <span className="text-sm text-muted-foreground">{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Limitations:</h4>
-          <p className="text-sm text-muted-foreground italic">{tier.limitations}</p>
-        </div>
-        <div className="space-y-3">
-          <h4 className="font-semibold">Add-ons</h4>
-          {addOns.map(addOn => (
-            <label
-              key={addOn.id}
-              htmlFor={`addon-${addOn.id}`}
-              className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-3 hover:bg-muted/40"
-            >
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id={`addon-${addOn.id}`}
-                  checked={selectedAddons.includes(addOn.id)}
-                  onCheckedChange={checked => toggleAddon(addOn.id, checked === true)}
-                />
-                <div>
-                  <p className="font-medium leading-tight">{addOn.name}</p>
-                  <p className="text-xs text-muted-foreground">{addOn.priceDisplay}</p>
+      <ScrollArea className="overflow-y-auto">
+        <div className="py-4 px-6 space-y-4">
+          <div>
+            <h4 className="font-semibold mb-2">What's Included:</h4>
+            <ul className="space-y-2">
+              {tier.features.map((feature, index) => (
+                <li key={index} className="flex items-start">
+                  <Check className="w-4 h-4 mr-3 text-primary shrink-0 mt-1" />
+                  <span className="text-sm text-muted-foreground">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2">Limitations:</h4>
+            <p className="text-sm text-muted-foreground italic">{tier.limitations}</p>
+          </div>
+          <div className="space-y-3">
+            <h4 className="font-semibold">Add-ons</h4>
+            {addOns.map(addOn => (
+              <label
+                key={addOn.id}
+                htmlFor={`addon-${addOn.id}`}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-3 hover:bg-muted/40"
+              >
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id={`addon-${addOn.id}`}
+                    checked={selectedAddons.includes(addOn.id)}
+                    onCheckedChange={checked => toggleAddon(addOn.id, checked === true)}
+                  />
+                  <div>
+                    <p className="font-medium leading-tight">{addOn.name}</p>
+                    <p className="text-xs text-muted-foreground">{addOn.priceDisplay}</p>
+                  </div>
                 </div>
-              </div>
-            </label>
-          ))}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col">
-            <Label htmlFor="student-name" className="text-sm mb-1">
-              Student name (optional)
-            </Label>
-            <Input
-              id="student-name"
-              placeholder="Your full name"
-              value={customerName}
-              onChange={event => setCustomerName(event.target.value)}
-            />
+              </label>
+            ))}
           </div>
-          <div className="flex flex-col">
-            <Label htmlFor="student-email" className="text-sm mb-1">
-              Email for receipt and invoice
-            </Label>
-            <Input
-              id="student-email"
-              type="email"
-              placeholder="you@example.com"
-              required
-              value={customerEmail}
-              onChange={event => setCustomerEmail(event.target.value)}
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col">
+              <Label htmlFor="student-name" className="text-sm mb-1">
+                Student name (optional)
+              </Label>
+              <Input
+                id="student-name"
+                placeholder="Your full name"
+                value={customerName}
+                onChange={event => setCustomerName(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-col">
+              <Label htmlFor="student-email" className="text-sm mb-1">
+                Email for receipt and invoice
+              </Label>
+              <Input
+                id="student-email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                value={customerEmail}
+                onChange={event => setCustomerEmail(event.target.value)}
+              />
+            </div>
           </div>
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
+            <p className="font-medium">Order summary</p>
+            <p className="text-lg font-headline">{formattedTotal}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Stripe securely handles the payment and emails you a tax-compliant invoice instantly after checkout.
+            </p>
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Checkout error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
         </div>
-        <div className="rounded-md border border-primary/30 bg-primary/5 p-4 text-sm">
-          <p className="font-medium">Order summary</p>
-          <p className="text-lg font-headline">{formattedTotal}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Stripe securely handles the payment and emails you a tax-compliant invoice instantly after checkout.
-          </p>
-        </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertTitle>Checkout error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-      <DialogFooter className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      </ScrollArea>
+      <DialogFooter className="p-6 flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <Button
           onClick={startCheckout}
           size="lg"
