@@ -1,14 +1,15 @@
 
 "use client";
 
-import {ChangeEvent, FormEvent, useEffect, useMemo, useState} from "react";
+import {ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState} from "react";
 import Link from "next/link";
 import {useSearchParams} from 'next/navigation';
-import {ArrowLeft, CheckCircle2} from "lucide-react";
+import {ArrowLeft, CheckCircle2, Loader2} from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
 import {BookingFlowIndicator} from "@/components/travel/booking-flow-indicator";
+import {Button} from "@/components/ui/button";
 
 type PassengerForm = {
   title: string;
@@ -81,7 +82,7 @@ function createPassengerForms(count: number): PassengerForm[] {
   }));
 }
 
-export default function Checkout() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offer") ?? "";
   const passengerCount = useMemo(
@@ -100,6 +101,9 @@ export default function Checkout() {
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+  const [creatingPaymentSession, setCreatingPaymentSession] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentSessionUrl, setPaymentSessionUrl] = useState<string | null>(null);
 
   const currentStep = bookingResult ? 3 : 2;
 
@@ -171,7 +175,9 @@ export default function Checkout() {
 
   function onPassengerChange(index: number, field: keyof PassengerForm) {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const value = event.currentTarget.value;
+      const target = event.target as HTMLInputElement | HTMLSelectElement | null;
+      if (!target) return;
+      const value = target.value ?? "";
       updatePassenger(index, field, value);
       if (index === 0 && (field === "email" || field === "phone_number")) {
         setContact(prev => ({
@@ -185,7 +191,7 @@ export default function Checkout() {
   async function book(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!offer) return;
-    
+
     const formData = new FormData(event.currentTarget);
     const passengersPayload = passengers.map((_, index) => ({
       id: `pas_${index + 1}`,
@@ -206,6 +212,8 @@ export default function Checkout() {
     setBooking(true);
     setBookingError(null);
     setBookingResult(null);
+    setPaymentError(null);
+    setPaymentSessionUrl(null);
 
     try {
       const payload = {
@@ -248,6 +256,51 @@ export default function Checkout() {
     }
   }
 
+  async function startPayment() {
+    if (!bookingResult) return;
+
+    setCreatingPaymentSession(true);
+    setPaymentError(null);
+
+    try {
+      const response = await fetch(`/api/payments/travel/checkout`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          orderId: bookingResult.order_id,
+          bookingReference: bookingResult.booking_reference,
+          amount: bookingResult.pricing.display_total_amount,
+          currency: bookingResult.pricing.currency,
+          offerId,
+          contact,
+        }),
+      });
+
+      const body = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          body && typeof body.error === "string"
+            ? body.error
+            : "Unable to start the payment session. Please try again.";
+        throw new Error(message);
+      }
+
+      if (body?.url) {
+        setPaymentSessionUrl(body.url);
+        window.location.href = body.url;
+        return;
+      }
+
+      throw new Error("Stripe did not return a checkout URL.");
+    } catch (error: any) {
+      const message = error?.message ?? "Unable to start the payment session. Please try again.";
+      setPaymentError(message);
+    } finally {
+      setCreatingPaymentSession(false);
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -263,7 +316,7 @@ export default function Checkout() {
           <div className="space-y-2">
             <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
             <p className="text-muted-foreground">
-              Enter traveller details exactly as they appear on passports. We’ll reserve your seats and then arrange payment with you separately.
+              Enter traveller details exactly as they appear on passports. We’ll reserve your seats and then redirect you to Stripe to complete payment securely.
             </p>
           </div>
 
@@ -483,10 +536,10 @@ export default function Checkout() {
                 disabled={!canSubmit}
                 className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
                 >
-                {booking ? "Reserving…" : "Reserve Itinerary"}
+                {booking ? "Reserving…" : "Reserve & continue to payment"}
                 </button>
                 <p className="text-xs text-muted-foreground">
-                    By clicking 'Reserve', we will hold the seats with the airline. Payment will be collected separately.
+                    We'll confirm seat availability with Duffel first, then redirect you to Stripe to securely pay and receive your invoice instantly.
                 </p>
              </div>
           </form>
@@ -498,9 +551,9 @@ export default function Checkout() {
                 <h2 className="text-xl font-semibold">Booking confirmed</h2>
               </div>
               <p className="text-muted-foreground text-sm">
-                Your Duffel order is confirmed. Share this booking reference with the traveller and keep an
-                eye on your inbox for e-ticket documents. MapleLeed forwards the airline amount on your
-                behalf and stays on call for schedule changes.
+                Your Duffel order is confirmed. Share this booking reference with the traveller and keep an eye
+                on your inbox for e-ticket documents. Complete payment below to finalise ticketing—Stripe will
+                email you a receipt and invoice immediately after the charge succeeds.
               </p>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
@@ -539,6 +592,36 @@ export default function Checkout() {
                   </ul>
                 </div>
               )}
+              {paymentError && (
+                <div className="border border-destructive/50 bg-destructive/10 text-destructive rounded-lg p-4">
+                  {paymentError}
+                </div>
+              )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  type="button"
+                  onClick={startPayment}
+                  disabled={creatingPaymentSession}
+                  className="w-full sm:w-auto"
+                >
+                  {creatingPaymentSession ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparing secure payment...
+                    </>
+                  ) : (
+                    <>Pay with Stripe to issue tickets</>
+                  )}
+                </Button>
+                {paymentSessionUrl && (
+                  <p className="text-xs text-muted-foreground sm:text-right">
+                    Not redirected?{' '}
+                    <a href={paymentSessionUrl} className="underline">
+                      Open the Stripe checkout page
+                    </a>
+                    .
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -552,4 +635,20 @@ export default function Checkout() {
   );
 }
 
-    
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <main className="flex-grow flex items-center justify-center px-6 py-24 text-sm text-muted-foreground">
+            Loading checkout…
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
+  );
+}
