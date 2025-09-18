@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { LayoutDashboard } from 'lucide-react';
+
 import { VisaPilotIcon } from './icons';
 
 export default function Footer() {
@@ -15,11 +17,19 @@ export default function Footer() {
             &copy; {currentYear} VisaPilot. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
+            <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
+            <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
+            </Link>
+            <Link
+              href="/admin"
+              aria-label="Admin dashboard"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="sr-only">Admin dashboard</span>
             </Link>
           </div>
         </div>
