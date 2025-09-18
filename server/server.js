@@ -77,7 +77,7 @@ app.get("/api/offers/:id", async (req, res) => {
     const { data: offer } = await duffel.offers.get(req.params.id, {
       return_available_services: true,
     }); 
-  const paxCount = 1; // you can store the count in session or pass via query
+    const paxCount = Math.max(1, Number(req.query.pax ?? '1'));
     res.json(applyMarkup(offer, paxCount));
   } catch (e) {
     res.status(500).json({ error: "offer_get_failed" });
