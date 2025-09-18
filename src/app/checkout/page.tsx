@@ -255,8 +255,7 @@ export default function Checkout() {
           <div className="space-y-2">
             <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
             <p className="text-muted-foreground">
-              Enter traveller details exactly as they appear on passports. We’ll reserve your seats using
-              our Duffel agency credentials.
+              Enter traveller details exactly as they appear on passports. We’ll reserve your seats and then arrange payment with you separately.
             </p>
           </div>
 
@@ -282,7 +281,7 @@ export default function Checkout() {
                     {offer.pricing.display_total_amount} {offer.pricing.currency}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Airline portion handled automatically via Duffel after you confirm.
+                    This includes airline fare and our $75/ticket service fee.
                   </p>
                 </div>
               </div>
@@ -462,14 +461,18 @@ export default function Checkout() {
                 {bookingError}
               </div>
             )}
-
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
-            >
-              {booking ? "Confirming…" : "Confirm & book"}
-            </button>
+             <div className="text-center space-y-2">
+                <button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full bg-primary text-primary-foreground rounded-md h-12 flex items-center justify-center font-semibold text-lg disabled:bg-primary/70"
+                >
+                {booking ? "Reserving…" : "Reserve Itinerary"}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                    By clicking 'Reserve', we will hold the seats with the airline. Payment will be collected separately.
+                </p>
+             </div>
           </form>
 
           {bookingResult && (
@@ -497,7 +500,7 @@ export default function Checkout() {
                   <dd className="text-muted-foreground">{bookingResult.status || 'Confirmed'}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-foreground">Total paid</dt>
+                  <dt className="font-medium text-foreground">Total to be paid</dt>
                   <dd className="text-muted-foreground">
                     {bookingResult.pricing.display_total_amount} {bookingResult.pricing.currency}
                   </dd>
