@@ -84,6 +84,14 @@ function segmentKey(segment: SegmentSummary, index: number) {
   return segment.id || `${segment.marketing_flight}-${index}`;
 }
 
+function parsePassengerCount(value: string | null) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+  return Math.floor(parsed);
+}
+
 function createPassengerForms(count: number): PassengerForm[] {
   return Array.from({length: count}).map(() => ({
     title: "mr",
@@ -113,10 +121,7 @@ function SubmitButton() {
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offer") ?? "";
-  const passengerCount = useMemo(
-    () => Math.max(1, Number(searchParams.get("pax") ?? "1")),
-    [searchParams],
-  );
+  const passengerCount = useMemo(() => parsePassengerCount(searchParams.get("pax")), [searchParams]);
 
   const [offer, setOffer] = useState<OfferSummary | null>(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
