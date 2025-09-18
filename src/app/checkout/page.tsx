@@ -2,10 +2,13 @@
 "use client";
 
 import {ChangeEvent, FormEvent, useEffect, useMemo, useState} from "react";
-import { useSearchParams } from 'next/navigation';
+import Link from "next/link";
+import {useSearchParams} from 'next/navigation';
+import {ArrowLeft, CheckCircle2} from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
+import {BookingFlowIndicator} from "@/components/travel/booking-flow-indicator";
 
 type PassengerForm = {
   title: string;
@@ -19,6 +22,20 @@ type PassengerForm = {
 type ContactForm = {
   email: string;
   phone_number: string;
+};
+
+type DuffelDocument = {
+  id?: string;
+  unique_identifier?: string;
+  type?: string;
+};
+
+type BookingResult = {
+  order_id: string;
+  booking_reference: string;
+  status?: string;
+  documents: DuffelDocument[];
+  pricing: OfferSummary["pricing"];
 };
 
 const formatter = new Intl.DateTimeFormat("en", {
@@ -82,7 +99,9 @@ export default function Checkout() {
   const [contact, setContact] = useState<ContactForm>({email: "", phone_number: ""});
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingResult, setBookingResult] = useState<any>(null);
+  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+
+  const currentStep = bookingResult ? 3 : 2;
 
   useEffect(() => {
     if (!offerId) {
@@ -102,7 +121,7 @@ export default function Checkout() {
     if (!offerId) return;
     setLoadingOffer(true);
     setLoadError(null);
-    fetch(`/api/offers/${offerId}?pax=${passengerCount}`)
+    fetch(`/api/travel/offers/${offerId}?pax=${passengerCount}`)
       .then(response => {
         if (!response.ok) {
           return response.json().then(body => {
@@ -111,8 +130,12 @@ export default function Checkout() {
         }
         return response.json();
       })
-      .then(data => {
-        setOffer(data);
+      .then((data: {offer?: OfferSummary}) => {
+        if (data?.offer) {
+          setOffer(data.offer);
+        } else {
+          throw new Error("Offer details were unavailable.");
+        }
       })
       .catch(error => {
         console.error(error);
@@ -169,7 +192,7 @@ export default function Checkout() {
 
     try {
       const payload = {
-        offer_id: offerId,
+        offerId,
         passengers: passengers.map((passenger, index) => ({
           id: `pas_${index + 1}`,
           type: "adult",
@@ -183,7 +206,7 @@ export default function Checkout() {
         contact,
       };
 
-      const response = await fetch(`/api/book-with-balance`, {
+      const response = await fetch(`/api/travel/book`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
@@ -202,7 +225,13 @@ export default function Checkout() {
       }
 
       const data = await response.json();
-      setBookingResult(data.order);
+      setBookingResult({
+        order_id: data.order_id,
+        booking_reference: data.booking_reference,
+        status: data.status,
+        documents: Array.isArray(data.documents) ? data.documents : [],
+        pricing: data.pricing ?? offer.pricing,
+      });
     } catch (error: any) {
       console.error(error);
       setBookingError(error?.message ?? "Booking failed. Please try again.");
@@ -216,6 +245,13 @@ export default function Checkout() {
       <Header />
       <main className="px-6 pb-24 pt-24 w-full">
         <section className="max-w-4xl mx-auto space-y-8">
+          <Link
+            href="/travel#flight-search"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to flight options
+          </Link>
+          <BookingFlowIndicator currentStep={currentStep} />
           <div className="space-y-2">
             <h1 className="text-3xl font-headline font-bold">Confirm your booking</h1>
             <p className="text-muted-foreground">
@@ -241,12 +277,12 @@ export default function Checkout() {
                   <p className="text-sm text-muted-foreground">Travellers: {passengerCount}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total including concierge fee</p>
+                  <p className="text-sm text-muted-foreground">MapleLeed all-in price</p>
                   <p className="text-3xl font-headline font-bold">
                     {offer.pricing.display_total_amount} {offer.pricing.currency}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Airline fare {offer.pricing.base_total_amount} + {offer.pricing.markup_total}
+                    Airline portion handled automatically via Duffel after you confirm.
                   </p>
                 </div>
               </div>
@@ -265,10 +301,10 @@ export default function Checkout() {
                         <li key={segmentKey(segment, index)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
                             <p className="font-semibold">
-                              {formatDate(segment.dep)} → {formatDate(segment.arr)}
+                              {formatDate(segment.departing_at)} → {formatDate(segment.arriving_at)}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {slice.origin} to {slice.destination}
+                              {segment.origin} to {segment.destination}
                             </p>
                           </div>
                           <div className="text-sm text-muted-foreground text-right">
@@ -437,16 +473,20 @@ export default function Checkout() {
           </form>
 
           {bookingResult && (
-            <div className="border border-border rounded-xl bg-muted/20 p-6 space-y-3">
-              <h2 className="text-xl font-semibold">Booking confirmed</h2>
+            <div className="border border-border rounded-xl bg-muted/20 p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Booking confirmed</h2>
+              </div>
               <p className="text-muted-foreground text-sm">
                 Your Duffel order is confirmed. Share this booking reference with the traveller and keep an
-                eye on your inbox for e-ticket documents.
+                eye on your inbox for e-ticket documents. MapleLeed forwards the airline amount on your
+                behalf and stays on call for schedule changes.
               </p>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <dt className="font-medium text-foreground">Order ID</dt>
-                  <dd className="text-muted-foreground">{bookingResult.id}</dd>
+                  <dd className="text-muted-foreground">{bookingResult.order_id}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-foreground">Booking reference</dt>
@@ -457,15 +497,9 @@ export default function Checkout() {
                   <dd className="text-muted-foreground">{bookingResult.status || 'Confirmed'}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-foreground">Charged to airline</dt>
+                  <dt className="font-medium text-foreground">Total paid</dt>
                   <dd className="text-muted-foreground">
-                    {offer.pricing.base_total_amount} {offer.pricing.currency}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-foreground">Total collected</dt>
-                  <dd className="text-muted-foreground">
-                    {offer.pricing.display_total_amount} {offer.pricing.currency}
+                    {bookingResult.pricing.display_total_amount} {bookingResult.pricing.currency}
                   </dd>
                 </div>
               </dl>
@@ -473,11 +507,16 @@ export default function Checkout() {
                 <div>
                   <h3 className="text-sm font-medium text-foreground">Travel documents</h3>
                   <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {bookingResult.documents.map((doc: any) => (
-                      <li key={doc.id ?? doc.unique_identifier}>
-                        {doc.type?.toUpperCase()}: {doc.unique_identifier ?? "Awaiting issuance"}
-                      </li>
-                    ))}
+                    {bookingResult.documents.map((doc, index) => {
+                      const label = doc.type ? doc.type.toUpperCase() : "DOCUMENT";
+                      const identifier = doc.unique_identifier ?? "Awaiting issuance";
+                      const key = doc.id ?? doc.unique_identifier ?? `${label}-${index}`;
+                      return (
+                        <li key={key}>
+                          {label}: {identifier}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
