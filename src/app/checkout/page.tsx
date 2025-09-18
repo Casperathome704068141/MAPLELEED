@@ -184,7 +184,24 @@ export default function Checkout() {
 
   async function book(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!offer || !canSubmit) return;
+    if (!offer) return;
+    
+    const formData = new FormData(event.currentTarget);
+    const passengersPayload = passengers.map((_, index) => ({
+      id: `pas_${index + 1}`,
+      type: "adult",
+      title: formData.get(`title-${index}`) as string,
+      given_name: formData.get(`given-${index}`) as string,
+      family_name: formData.get(`family-${index}`) as string,
+      born_on: formData.get(`dob-${index}`) as string,
+      email: formData.get(`email-${index}`) as string,
+      phone_number: formData.get(`phone-${index}`) as string,
+    }));
+
+    const contactPayload = {
+        email: formData.get('contact-email') as string,
+        phone_number: formData.get('contact-phone') as string,
+    };
 
     setBooking(true);
     setBookingError(null);
@@ -193,17 +210,8 @@ export default function Checkout() {
     try {
       const payload = {
         offerId,
-        passengers: passengers.map((passenger, index) => ({
-          id: `pas_${index + 1}`,
-          type: "adult",
-          title: passenger.title,
-          given_name: passenger.given_name,
-          family_name: passenger.family_name,
-          born_on: passenger.born_on,
-          email: passenger.email,
-          phone_number: passenger.phone_number,
-        })),
-        contact,
+        passengers: passengersPayload,
+        contact: contactPayload,
       };
 
       const response = await fetch(`/api/travel/book`, {
@@ -341,6 +349,7 @@ export default function Checkout() {
                       </label>
                       <select
                         id={`title-${index}`}
+                        name={`title-${index}`}
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.title}
                         onChange={onPassengerChange(index, "title")}
@@ -358,6 +367,7 @@ export default function Checkout() {
                       </label>
                       <input
                         id={`given-${index}`}
+                        name={`given-${index}`}
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.given_name}
                         onChange={onPassengerChange(index, "given_name")}
@@ -370,6 +380,7 @@ export default function Checkout() {
                       </label>
                       <input
                         id={`family-${index}`}
+                        name={`family-${index}`}
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.family_name}
                         onChange={onPassengerChange(index, "family_name")}
@@ -382,6 +393,7 @@ export default function Checkout() {
                       </label>
                       <input
                         id={`dob-${index}`}
+                        name={`dob-${index}`}
                         type="date"
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.born_on}
@@ -397,6 +409,7 @@ export default function Checkout() {
                       </label>
                       <input
                         id={`email-${index}`}
+                        name={`email-${index}`}
                         type="email"
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.email}
@@ -410,6 +423,7 @@ export default function Checkout() {
                       </label>
                       <input
                         id={`phone-${index}`}
+                        name={`phone-${index}`}
                         type="tel"
                         className="border border-input bg-background rounded-md px-3 py-2 h-11"
                         value={passenger.phone_number}
@@ -431,6 +445,7 @@ export default function Checkout() {
                   </label>
                   <input
                     id="contact-email"
+                    name="contact-email"
                     type="email"
                     className="border border-input bg-background rounded-md px-3 py-2 h-11"
                     value={contact.email}
@@ -444,6 +459,7 @@ export default function Checkout() {
                   </label>
                   <input
                     id="contact-phone"
+                    name="contact-phone"
                     type="tel"
                     className="border border-input bg-background rounded-md px-3 py-2 h-11"
                     value={contact.phone_number}
