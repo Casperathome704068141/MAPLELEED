@@ -36,7 +36,8 @@ import Footer from '@/components/footer';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { handleFindStudyOptions, bookConsultation } from '@/app/actions';
 import type { BookingFormState } from '@/app/actions';
 import type { FindStudyOptionsOutput } from '@/ai/flows/find-study-options';
@@ -264,7 +265,7 @@ function SearchSubmitButton() {
 }
 
 function CourseFinderSection() {
-    const [state, formAction] = useFormState(handleFindStudyOptions, initialStudyState);
+    const [state, formAction] = useActionState(handleFindStudyOptions, initialStudyState);
     const { pending } = useFormStatus();
 
     return (
@@ -373,7 +374,7 @@ function AppointmentSection() {
   const [selectedTime, setSelectedTime] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const { toast } = useToast();
-  const [bookingState, bookConsultationAction] = useFormState(bookConsultation, bookingInitialState);
+  const [bookingState, bookConsultationAction] = useActionState(bookConsultation, bookingInitialState);
   const formRef = React.useRef<HTMLFormElement>(null);
   const lastResultRef = React.useRef<{
     status: BookingFormState['status'];

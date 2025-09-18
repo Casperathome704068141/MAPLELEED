@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { handleGenerateChecklist } from '@/app/actions';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +36,7 @@ function SubmitButton() {
 }
 
 export default function DocumentChecklistGenerator() {
-  const [state, formAction] = useFormState(handleGenerateChecklist, initialState);
+  const [state, formAction] = useActionState(handleGenerateChecklist, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 

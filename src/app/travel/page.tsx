@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {FormEvent, useMemo, useRef, useState} from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   CalendarDays,
   Clock,
@@ -15,6 +16,7 @@ import {
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
+import {BookingFlowIndicator} from "@/components/travel/booking-flow-indicator";
 
 type SearchState = {
   origin: string;
@@ -112,8 +114,8 @@ const SERVICE_PILLARS = [
     body: "Receive airline letters, insurance confirmation, and enrollment proofs ready for embassy appointments.",
   },
   {
-    title: "Transparent concierge fees",
-    body: "We add $75 per traveller under $999 and $100 for higher-value itineraries—no hidden extras when you check out.",
+    title: "MapleLeed best-price guarantee",
+    body: "We bundle our travel expertise into every fare so you pay one all-in price personally curated for students.",
   },
   {
     title: "Proactive disruption care",
@@ -123,14 +125,14 @@ const SERVICE_PILLARS = [
 
 const FAQ_ITEMS = [
   {
-    question: "What is included in the concierge fee?",
+    question: "What is included in MapleLeed's travel service?",
     answer:
-      "Our concierge service covers itinerary curation, visa-ready documentation, seat selection support, disruption management, and live travel chat. It is $75 per traveller for bookings under $999 total and $100 for higher-value trips.",
+      "Every itinerary comes with visa-ready documentation, tailored baggage guidance, proactive disruption support, and live travel chat from our experts. It's all bundled into the price you see—no extras later on.",
   },
   {
-    question: "Can I pay separately for my flights and concierge support?",
+    question: "How does payment work for these fares?",
     answer:
-      "Yes. You will pay the airline directly through our Duffel checkout while MapleLeed charges the concierge fee. This keeps your airfare transparent and still gives you full support.",
+      "You pay MapleLeed's all-in price at checkout. Behind the scenes we remit the airline amount securely via Duffel and retain our service portion so the support team can stay with you from booking to boarding.",
   },
   {
     question: "Do you support multi-city or open-jaw itineraries?",
@@ -143,7 +145,7 @@ const POPULAR_ROUTES = [
   {
     origin: "YYZ",
     destination: "LHR",
-    note: "Average concierge-backed fare $865",
+    note: "Average MapleLeed fare $865",
   },
   {
     origin: "SFO",
@@ -513,9 +515,9 @@ export default function TravelPage() {
                   Book smarter flights with MapleLeed Travel Concierge
                 </h1>
                 <p className="max-w-2xl text-lg text-slate-200">
-                  Compare real-time Duffel fares, add our concierge fee—$75 per traveller for trips
-                  under $999 total and $100 for higher fares—and checkout in minutes. We stay with you
-                  until you arrive on campus.
+                  Compare real-time Duffel fares bundled into MapleLeed best-price offers. Checkout in
+                  minutes knowing our travel team is watching over your journey until you arrive on
+                  campus.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {HERO_HIGHLIGHTS.map(feature => (
@@ -536,7 +538,7 @@ export default function TravelPage() {
                   <ul className="space-y-4 text-sm text-slate-100/80">
                     <li className="flex items-start gap-3">
                       <Clock className="mt-0.5 h-4 w-4 text-primary" />
-                      <span>Average concierge response time under five minutes.</span>
+                      <span>Average expert response time under five minutes.</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <Users className="mt-0.5 h-4 w-4 text-primary" />
@@ -585,6 +587,7 @@ export default function TravelPage() {
 
         <section id={searchSectionId} className="relative -mt-16 px-6 pb-24">
           <div className="mx-auto flex max-w-6xl flex-col gap-10">
+            <BookingFlowIndicator currentStep={1} />
             <form
               ref={formRef}
               onSubmit={onSearch}
@@ -693,12 +696,19 @@ export default function TravelPage() {
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-2xl font-headline font-semibold">Available itineraries</h2>
-                  <span className="text-sm text-muted-foreground">{resultsTitle}</span>
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <span>{resultsTitle}</span>
+                    <Link
+                      href={`#${searchSectionId}`}
+                      className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                    >
+                      <ArrowLeft className="h-4 w-4" /> Modify search
+                    </Link>
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Pricing includes airline fares plus our concierge fee—$75 per traveller under $999
-                  total or $100 per traveller above that threshold. Pay airlines via Duffel, MapleLeed
-                  handles the support fee.
+                  These are MapleLeed all-in fares: we forward the airline amount through Duffel and keep
+                  our service portion so your support team stays on call from search to touchdown.
                 </p>
               </div>
             )}
@@ -827,7 +837,7 @@ export default function TravelPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-3xl border border-border bg-card/90 p-5 shadow">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Average concierge total
+                        Average all-in total
                       </p>
                       <p className="mt-2 text-2xl font-bold">
                         {formatCurrency(analytics.averagePrice, analytics.currency)}
@@ -903,7 +913,6 @@ export default function TravelPage() {
                 const {offer, totalDuration, price, maxStops} = item;
                 const totalPrice = price;
                 const currency = offer.pricing.currency;
-                const markupPerTicket = parseMoney(offer.pricing.markup_per_ticket);
                 const perTraveller = travellerCount > 0 ? totalPrice / travellerCount : totalPrice;
                 const firstSlice = offer.slices[0];
                 const firstSegment = firstSlice?.segments?.[0];
@@ -939,14 +948,13 @@ export default function TravelPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Total including concierge</p>
+                        <p className="text-sm text-muted-foreground">MapleLeed all-in total</p>
                         <p className="text-3xl font-headline font-bold">
                           {formatCurrency(totalPrice, currency)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(perTraveller, currency)} per traveller · Concierge fee
-                          {" "}
-                          {formatCurrency(markupPerTicket, currency)} each
+                          Approx. {formatCurrency(perTraveller, currency)} per traveller · Airline
+                          amount remitted securely via Duffel.
                         </p>
                       </div>
                     </div>
@@ -1013,7 +1021,7 @@ export default function TravelPage() {
                         href={`/checkout?offer=${offer.id}&pax=${travellerCount}`}
                         className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-2 font-semibold text-primary-foreground transition hover:bg-primary/90"
                       >
-                        Select & checkout
+                        Review details
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -1071,8 +1079,8 @@ export default function TravelPage() {
           <div className="mx-auto max-w-4xl px-6 text-center">
             <h2 className="text-3xl font-headline font-semibold">Ready to lock in your study trip?</h2>
             <p className="mt-4 text-lg">
-              Start a search, secure your seats with transparent concierge pricing, and travel with a
-              MapleLeed expert on call.
+              Start a search, lock in MapleLeed's all-in fares, and travel with an expert on call the
+              entire way to campus.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link
