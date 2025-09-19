@@ -398,14 +398,48 @@ export default function Home() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (mediaQuery.matches) {
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduceMotionQuery.matches) {
       setIsLoading(false);
       return;
     }
 
-    const timer = window.setTimeout(() => setIsLoading(false), 900);
-    return () => window.clearTimeout(timer);
+    let finished = false;
+    let animationFrameId = 0;
+    let fallbackTimeoutId: number | undefined;
+
+    const finishLoading = () => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+      if (fallbackTimeoutId !== undefined) {
+        window.clearTimeout(fallbackTimeoutId);
+        fallbackTimeoutId = undefined;
+      }
+      window.removeEventListener('load', finishLoading);
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        setIsLoading(false);
+      });
+    };
+
+    if (document.readyState === 'complete') {
+      finishLoading();
+    } else {
+      window.addEventListener('load', finishLoading, { once: true });
+    }
+
+    fallbackTimeoutId = window.setTimeout(finishLoading, 800);
+
+    return () => {
+      window.removeEventListener('load', finishLoading);
+      if (fallbackTimeoutId !== undefined) {
+        window.clearTimeout(fallbackTimeoutId);
+      }
+      window.cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
   return (

@@ -132,6 +132,13 @@
   transform-origin: 80px 80px;
 }
 
+.pl[data-paused='true'] .pl__arrows,
+.pl[data-paused='true'] .pl__ring-rotate,
+.pl[data-paused='true'] .pl__ring-stroke,
+.pl[data-paused='true'] .pl__tick {
+  animation-play-state: paused;
+}
+
 .pl__tick:nth-child(2) {
   animation-delay: -1.75s;
 }
