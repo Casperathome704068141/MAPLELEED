@@ -82,3 +82,253 @@
     @apply bg-background text-foreground font-body;
   }
 }
+/* Loader styles inspired by Uiverse.io */
+.pl {
+  display: block;
+  width: 9.375em;
+  height: 9.375em;
+  color: hsl(var(--primary));
+}
+
+.pl__arrows,
+.pl__ring-rotate,
+.pl__ring-stroke,
+.pl__tick {
+  animation-duration: 2s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.pl__arrows {
+  animation-name: arrows42;
+  transform: rotate(45deg);
+  transform-origin: 80px 80px;
+}
+
+.pl__ring-rotate,
+.pl__ring-stroke {
+  transform-origin: 80px 80px;
+}
+
+.pl__ring-rotate {
+  animation-name: ringRotate42;
+}
+
+.pl__ring-stroke {
+  animation-name: ringStroke42;
+  transform: rotate(-45deg);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 12;
+}
+
+.pl__tick {
+  animation-name: tick42;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 10;
+  transform-origin: 80px 80px;
+}
+
+.pl__tick:nth-child(2) {
+  animation-delay: -1.75s;
+}
+
+.pl__tick:nth-child(3) {
+  animation-delay: -1.5s;
+}
+
+.pl__tick:nth-child(4) {
+  animation-delay: -1.25s;
+}
+
+.pl__tick:nth-child(5) {
+  animation-delay: -1s;
+}
+
+.pl__tick:nth-child(6) {
+  animation-delay: -0.75s;
+}
+
+.pl__tick:nth-child(7) {
+  animation-delay: -0.5s;
+}
+
+.pl__tick:nth-child(8) {
+  animation-delay: -0.25s;
+}
+
+@keyframes arrows42 {
+  from {
+    transform: rotate(45deg);
+  }
+
+  to {
+    transform: rotate(405deg);
+  }
+}
+
+@keyframes ringRotate42 {
+  from {
+    transform: rotate(0);
+  }
+
+  to {
+    transform: rotate(720deg);
+  }
+}
+
+@keyframes ringStroke42 {
+  from,
+  to {
+    stroke-dashoffset: 452;
+    transform: rotate(-45deg);
+  }
+
+  50% {
+    stroke-dashoffset: 169.5;
+    transform: rotate(-180deg);
+  }
+}
+
+@keyframes tick42 {
+  from,
+  3%,
+  47%,
+  to {
+    stroke-dashoffset: -12;
+  }
+
+  14%,
+  36% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl__arrows,
+  .pl__ring-rotate,
+  .pl__ring-stroke,
+  .pl__tick {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* 3D card styles inspired by Uiverse.io */
+.maple-tilt {
+  display: flex;
+  perspective: 1200px;
+}
+
+.maple-tilt-card {
+  position: relative;
+  width: 100%;
+  padding-top: 56px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transform-style: preserve-3d;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0) 18.75%, rgba(148, 163, 184, 0.12) 0 31.25%, rgba(15, 23, 42, 0) 0),
+    repeating-linear-gradient(45deg, rgba(148, 163, 184, 0.18) -6.25%, rgba(241, 245, 249, 0.85) 6.25%, rgba(148, 163, 184, 0.18) 18.75%);
+  background-size: 60px 60px;
+  background-position: 0 0, 0 0;
+  background-color: rgba(248, 250, 252, 0.95);
+  box-shadow: 0 32px 56px -36px rgba(15, 23, 42, 0.45);
+  transition: transform 0.6s ease, background-position 0.6s ease, box-shadow 0.6s ease;
+}
+
+.maple-tilt-card:hover {
+  background-position: -120px 120px, -120px 120px;
+  transform: rotate3d(0.45, 0.9, 0, 26deg);
+  box-shadow: 0 40px 80px -32px rgba(15, 23, 42, 0.6);
+}
+
+.maple-tilt-card__content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 72px 32px 32px 32px;
+  border-radius: 24px 64px 24px 24px;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.72));
+  color: hsl(var(--primary-foreground));
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transform: translate3d(0, 0, 60px);
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card__title {
+  margin-top: 32px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  transform: translate3d(0, 0, 55px);
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card__description {
+  margin-top: 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  transform: translate3d(0, 0, 45px);
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card__cta {
+  margin-top: 24px;
+  width: fit-content;
+  transform: translate3d(0, 0, 35px);
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card__badge {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: hsl(var(--primary));
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 18px 36px -24px rgba(15, 23, 42, 0.45);
+  transform: translate3d(0, 0, 90px);
+  transition: transform 0.5s ease;
+}
+
+.maple-tilt-card:hover .maple-tilt-card__icon,
+.maple-tilt-card:hover .maple-tilt-card__title,
+.maple-tilt-card:hover .maple-tilt-card__description,
+.maple-tilt-card:hover .maple-tilt-card__cta,
+.maple-tilt-card:hover .maple-tilt-card__badge {
+  transform: translate3d(0, 0, 90px);
+}
+
+@media (max-width: 768px) {
+  .maple-tilt-card {
+    padding-top: 48px;
+  }
+
+  .maple-tilt-card__content {
+    padding: 64px 24px 24px 24px;
+  }
+}
