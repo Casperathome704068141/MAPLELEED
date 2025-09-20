@@ -4,10 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
-
-import { app } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,14 +32,10 @@ export default function AdminLoginPage() {
     }
 
     try {
-      const auth = getAuth(app);
-      const credentials = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await credentials.user.getIdToken();
-
       const response = await fetch('/api/admin/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
@@ -51,9 +44,9 @@ export default function AdminLoginPage() {
       }
 
       router.replace('/admin');
-    } catch (authError: any) {
-      console.error('Admin login failed', authError);
-      const message = authError?.message ?? 'Unable to sign in. Check your credentials and try again.';
+    } catch (loginError: unknown) {
+      console.error('Admin login failed', loginError);
+      const message = loginError instanceof Error ? loginError.message : 'Unable to sign in. Check your credentials and try again.';
       setError(message);
     } finally {
       setSubmitting(false);
