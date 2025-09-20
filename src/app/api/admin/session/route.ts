@@ -25,7 +25,11 @@ export async function POST(request: Request) {
     const auth = getFirebaseAdminAuth();
     const decoded = await auth.verifyIdToken(idToken, true);
 
-    if (decoded.uid !== serverEnv.ADMIN_ALLOWED_UID) {
+    const allowedEmail = serverEnv.ADMIN_ALLOWED_EMAIL.toLowerCase();
+    const isAllowedUid = decoded.uid === serverEnv.ADMIN_ALLOWED_UID;
+    const isAllowedEmail = decoded.email?.toLowerCase() === allowedEmail;
+
+    if (!isAllowedUid && !isAllowedEmail) {
       return NextResponse.json({ error: 'You do not have admin access.' }, { status: 403 });
     }
 

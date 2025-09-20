@@ -53,9 +53,22 @@ DUFFEL_ACCESS_TOKEN=...
 STRIPE_SECRET_KEY=...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
 NEXT_PUBLIC_SITE_URL=http://localhost:9002  # optional, used in Stripe helpers
+FIREBASE_ADMIN_PROJECT_ID=...
+FIREBASE_ADMIN_CLIENT_EMAIL=...
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+ADMIN_ALLOWED_UID=...  # Firebase UID for the primary administrator
 ```
 
 The Express server in `server/` also expects `DUFFEL_ACCESS_TOKEN`. Create `server/.env` if you run it locally.
+
+### Admin access & notifications
+
+- `ADMIN_ALLOWED_EMAIL` (optional) – Email address that is allowed to access the admin panel. Defaults to `anthonyluci69@gmail.com`.
+- `ADMIN_SHARED_SECRET` (optional) – Shared passphrase that must be provided during admin login. Defaults to `1Z7boubvwJTwlZn89mWuwQuiZnr1`.
+- `TEAM_NOTIFICATIONS_EMAIL` (optional) – Additional address that should receive operational emails. MapleLeed always copies `anthonyluci69@gmail.com`.
+- `EMAIL_FROM_ADDRESS` – Customise the sender identity for transactional email.
+
+The MapleLeed admin can now authenticate with their Firebase credentials plus the shared secret `1Z7boubvwJTwlZn89mWuwQuiZnr1`. All bookings, invoices, travel orders, and incident alerts are automatically delivered to `anthonyluci69@gmail.com`.
 
 ### Running the App Locally
 
@@ -93,6 +106,12 @@ The travel workflow relies on both services running concurrently.
 - Deploy the Next.js app to Vercel (or another preferred platform) with the same environment variables configured as in development.
 - Deploy the Express Duffel bridge to a Node-compatible host such as Fly.io or Render, and point the frontend to its public URL.
 - Configure analytics and monitoring before launch to track conversions and identify regressions quickly.
+- Apply the Firestore and Storage rules found in `firebase/firestore.rules` and `firebase/storage.rules` to secure appointment/order data while making the marketing assets folder publicly readable:
+
+  ```bash
+  firebase deploy --only firestore:rules
+  firebase deploy --only storage:rules
+  ```
 
 ## Contributing
 
