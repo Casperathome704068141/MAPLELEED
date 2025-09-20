@@ -1,16 +1,50 @@
 
-import { initializeApp, getApps } from "firebase/app";
+import { getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AlzaSyA_Aa1NRWDIJMNNjy-Jf36z7sHx9h8L_N8",
-  authDomain: "studio-9298040015-4934f.firebaseapp.com",
-  projectId: "studio-9298040015-4934f",
-  storageBucket: "studio-9298040015-4934f.appspot.com",
-  messagingSenderId: "1073025294967",
-  appId: "1:1073025294967:web:2aa3d23abb8081fb421c72",
-  measurementId: "G-xxxxxxxxxx"
+  apiKey: 'AlzaSyA_Aa1NRWDIJMNNjy-Jf36z7sHx9h8L_N8',
+  authDomain: 'studio-9298040015-4934f.firebaseapp.com',
+  projectId: 'studio-9298040015-4934f',
+  storageBucket: 'studio-9298040015-4934f.appspot.com',
+  messagingSenderId: '1073025294967',
+  appId: '1:1073025294967:web:2aa3d23abb8081fb421c72',
+  measurementId: 'G-xxxxxxxxxx',
 };
 
+let firebaseApp: FirebaseApp | null = null;
+let firebaseStorage: FirebaseStorage | null = null;
+let firebaseAuth: Auth | null = null;
 
-// Initialize Firebase
-export const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+export const app = getOrInitFirebaseApp();
+
+function getOrInitFirebaseApp() {
+  if (firebaseApp) {
+    return firebaseApp;
+  }
+
+  firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+
+  return firebaseApp;
+}
+
+export function getFirebaseStorage() {
+  if (firebaseStorage) {
+    return firebaseStorage;
+  }
+
+  firebaseStorage = getStorage(getOrInitFirebaseApp());
+
+  return firebaseStorage;
+}
+
+export function getFirebaseAuth() {
+  if (firebaseAuth) {
+    return firebaseAuth;
+  }
+
+  firebaseAuth = getAuth(getOrInitFirebaseApp());
+
+  return firebaseAuth;
+}

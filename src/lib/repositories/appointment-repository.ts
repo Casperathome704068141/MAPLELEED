@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 import { getFirebaseAdminFirestore } from '@/lib/firebase-admin';
 import { serverEnv } from '@/lib/env/server';
-import { sendAppointmentConfirmationEmail } from '@/lib/emails';
+import { notifyAdminOfIncident, sendAppointmentConfirmationEmail } from '@/lib/emails';
 
 export type AppointmentStatus = 'Upcoming' | 'Completed' | 'Cancelled' | 'Pending';
 
@@ -82,6 +82,18 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
 
   await sendAppointmentConfirmationEmail(appointment).catch(error => {
     console.warn('Appointment confirmation email failed', error);
+    void notifyAdminOfIncident({
+      subject: 'Consultation email delivery issue',
+      message: 'Sending the confirmation email to a MapleLeed student failed.',
+      context: {
+        'Appointment ID': docRef.id,
+        'Student name': input.studentName,
+        'Student email': input.email,
+        When: scheduledTimestamp.toDate().toISOString(),
+        Error: error instanceof Error ? error.message : String(error),
+      },
+      severity: 'warning',
+    });
   });
 
   return appointment;

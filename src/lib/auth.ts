@@ -31,7 +31,11 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
   try {
     const decoded = await getFirebaseAdminAuth().verifySessionCookie(sessionCookie.value, true);
 
-    if (decoded.uid !== serverEnv.ADMIN_ALLOWED_UID) {
+    const allowedEmail = serverEnv.ADMIN_ALLOWED_EMAIL.toLowerCase();
+    const isAllowedUid = decoded.uid === serverEnv.ADMIN_ALLOWED_UID;
+    const isAllowedEmail = decoded.email?.toLowerCase() === allowedEmail;
+
+    if (!isAllowedUid && !isAllowedEmail) {
       return null;
     }
 
