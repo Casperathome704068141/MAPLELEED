@@ -1,15 +1,12 @@
-import {Duffel} from '@duffel/api';
+import { Duffel } from '@duffel/api';
+
+import { serverEnv } from './env/server';
 
 let cachedClient: Duffel | null = null;
 
 export function getDuffelClient() {
-  const token = process.env.DUFFEL_ACCESS_TOKEN;
-  if (!token) {
-    throw new Error('DUFFEL_ACCESS_TOKEN is not configured.');
-  }
-
   if (!cachedClient) {
-    cachedClient = new Duffel({token});
+    cachedClient = new Duffel({ token: serverEnv.DUFFEL_ACCESS_TOKEN });
   }
 
   return cachedClient;

@@ -1,6 +1,8 @@
-import { promises as fs } from 'fs';
-import { randomUUID } from 'crypto';
-import path from 'path';
+import { Timestamp } from 'firebase-admin/firestore';
+
+import { getFirebaseAdminFirestore } from '@/lib/firebase-admin';
+import { serverEnv } from '@/lib/env/server';
+import { sendAppointmentConfirmationEmail } from '@/lib/emails';
 
 export type AppointmentStatus = 'Upcoming' | 'Completed' | 'Cancelled' | 'Pending';
 
@@ -22,57 +24,65 @@ type AppointmentInput = {
   status?: AppointmentStatus;
 };
 
-const DATA_DIRECTORY = path.join(process.cwd(), 'data');
-const DATA_FILE = path.join(DATA_DIRECTORY, 'appointments.json');
+type AppointmentDocument = {
+  studentName: string;
+  email: string;
+  scheduledFor: Timestamp;
+  timeSlotLabel: string;
+  status: AppointmentStatus;
+  createdAt: Timestamp;
+};
 
-async function ensureStorage() {
-  await fs.mkdir(DATA_DIRECTORY, { recursive: true });
-  try {
-    await fs.access(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, '[]', 'utf8');
-  }
-}
+const collectionName = serverEnv.FIREBASE_APPOINTMENTS_COLLECTION;
 
-async function readAppointments(): Promise<AppointmentRecord[]> {
-  await ensureStorage();
-  const fileContents = await fs.readFile(DATA_FILE, 'utf8');
-
-  try {
-    const parsed = JSON.parse(fileContents);
-    if (Array.isArray(parsed)) {
-      return parsed as AppointmentRecord[];
-    }
-
-    return [];
-  } catch {
-    return [];
-  }
+function mapAppointment(docId: string, data: AppointmentDocument): AppointmentRecord {
+  return {
+    id: docId,
+    studentName: data.studentName,
+    email: data.email,
+    scheduledFor: data.scheduledFor.toDate().toISOString(),
+    timeSlotLabel: data.timeSlotLabel,
+    status: data.status,
+    createdAt: data.createdAt.toDate().toISOString(),
+  };
 }
 
 export async function listAppointments(): Promise<AppointmentRecord[]> {
-  const appointments = await readAppointments();
-  return appointments.sort(
-    (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime(),
-  );
+  const firestore = getFirebaseAdminFirestore();
+  const snapshot = await firestore
+    .collection(collectionName)
+    .orderBy('scheduledFor', 'asc')
+    .get();
+
+  return snapshot.docs.map(doc => mapAppointment(doc.id, doc.data() as AppointmentDocument));
 }
 
 export async function createAppointment(input: AppointmentInput): Promise<AppointmentRecord> {
-  const appointments = await readAppointments();
-  const now = new Date();
+  const firestore = getFirebaseAdminFirestore();
+  const now = Timestamp.now();
+  const scheduledTimestamp = Timestamp.fromDate(new Date(input.scheduledFor));
 
-  const appointment: AppointmentRecord = {
-    id: randomUUID(),
+  const docRef = await firestore.collection(collectionName).add({
     studentName: input.studentName,
     email: input.email,
-    scheduledFor: input.scheduledFor,
+    scheduledFor: scheduledTimestamp,
     timeSlotLabel: input.timeSlotLabel,
     status: input.status ?? 'Upcoming',
-    createdAt: now.toISOString(),
-  };
+    createdAt: now,
+  });
 
-  appointments.push(appointment);
-  await fs.writeFile(DATA_FILE, JSON.stringify(appointments, null, 2), 'utf8');
+  const appointment = mapAppointment(docRef.id, {
+    studentName: input.studentName,
+    email: input.email,
+    scheduledFor: scheduledTimestamp,
+    timeSlotLabel: input.timeSlotLabel,
+    status: input.status ?? 'Upcoming',
+    createdAt: now,
+  });
+
+  await sendAppointmentConfirmationEmail(appointment).catch(error => {
+    console.warn('Appointment confirmation email failed', error);
+  });
 
   return appointment;
 }

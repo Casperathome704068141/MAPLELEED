@@ -1,7 +1,9 @@
 import {NextResponse} from 'next/server';
+
 import {getDuffelClient} from '@/lib/duffel';
 import {summariseOffer} from '@/lib/travel';
 import {createSampleSearchResults} from '@/lib/sample-travel-data';
+import {applyRateLimit} from '@/lib/rate-limit';
 
 type SearchPayload = {
   origin?: string;
@@ -11,6 +13,8 @@ type SearchPayload = {
   adults?: number;
   cabinClass?: string;
 };
+
+type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 
 function normaliseLocation(value?: string | null) {
   return value?.toString().trim().toUpperCase() ?? '';
@@ -35,16 +39,32 @@ export async function POST(req: Request) {
   let departureDate: string | null = null;
   let returnDate: string | null = null;
   let adults = 1;
-  let cabinClass = 'economy';
+  let cabinClass: CabinClass = 'economy';
 
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anonymous';
+    const rateLimit = applyRateLimit(`travel-search:${ip}`, {windowMs: 60_000, max: 20});
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {error: 'You are searching too quickly. Please wait a few moments before trying again.'},
+        {
+          status: 429,
+          headers: {'Retry-After': String(rateLimit.retryAfter ?? 30)},
+        },
+      );
+    }
+
     const body: SearchPayload = await req.json();
     origin = normaliseLocation(body.origin);
     destination = normaliseLocation(body.destination);
     departureDate = body.departureDate?.toString() ?? null;
     returnDate = body.returnDate?.toString() || null;
     adults = parseAdultCount(body.adults ?? 1);
-    cabinClass = (body.cabinClass ?? 'economy').toString();
+    const requestedCabin = (body.cabinClass ?? 'economy').toString().toLowerCase();
+    const allowedCabins: CabinClass[] = ['economy', 'premium_economy', 'business', 'first'];
+    cabinClass = allowedCabins.includes(requestedCabin as CabinClass)
+      ? (requestedCabin as CabinClass)
+      : 'economy';
 
     if (!origin || !destination || !departureDate) {
       return NextResponse.json(
@@ -81,7 +101,7 @@ export async function POST(req: Request) {
     const passengers = Array.from({length: adults}).map(() => ({type: 'adult' as const}));
 
     const offerRequest = await duffel.offerRequests.create({
-      slices,
+      slices: slices as any,
       passengers,
       cabin_class: cabinClass,
       return_offers: true,
@@ -95,7 +115,7 @@ export async function POST(req: Request) {
       offerRequestId: offerRequest.data.id,
       passengers: adults,
       offers,
-    });
+    }, {headers: {'Cache-Control': 'no-store'}});
   } catch (error: any) {
     console.error('Duffel search failed', error);
     if (origin && destination && departureDate) {
@@ -115,7 +135,7 @@ export async function POST(req: Request) {
             offerRequestId: fallback.offerRequestId,
             passengers: adults,
             offers: fallback.offers,
-          });
+          }, {headers: {'Cache-Control': 'no-store'}});
         }
       } catch (fallbackError) {
         console.error('Sample search generation failed', fallbackError);

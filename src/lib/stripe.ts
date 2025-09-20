@@ -1,16 +1,14 @@
 import Stripe from 'stripe';
 
+import { clientEnv } from './env/client';
+import { serverEnv } from './env/server';
+
 let cachedClient: Stripe | null = null;
 
 export function getStripeClient() {
-  const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    throw new Error('STRIPE_SECRET_KEY is not configured.');
-  }
-
   if (!cachedClient) {
-    cachedClient = new Stripe(secret, {
-      apiVersion: '2024-06-20',
+    cachedClient = new Stripe(serverEnv.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-08-27.basil',
     });
   }
 
@@ -18,21 +16,16 @@ export function getStripeClient() {
 }
 
 export function getStripePublishableKey() {
-  const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  if (!key) {
-    throw new Error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not configured.');
-  }
-
-  return key;
+  return clientEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 }
 
 export function resolveBaseUrl(request: Request) {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
+  if (serverEnv.NEXT_PUBLIC_SITE_URL) {
+    return serverEnv.NEXT_PUBLIC_SITE_URL;
   }
 
   try {
-    const {protocol, host} = new URL(request.url);
+    const { protocol, host } = new URL(request.url);
     return `${protocol}//${host}`;
   } catch (error) {
     return 'http://localhost:3000';
