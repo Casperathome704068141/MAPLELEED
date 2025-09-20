@@ -1,4 +1,3 @@
-
 export type MarketingAssets = {
   hero: string[];
   study: string[];
@@ -9,26 +8,26 @@ export type MarketingAssets = {
 
 export const DEFAULT_MARKETING_ASSETS: MarketingAssets = {
   hero: [
-    '/pexels-s-a-1620480-10850900.jpg',
-    '/pexels-arpan-parikh-78161269-8850997.jpg',
+    '/christin-hume-Hcfwew744z4-unsplash.jpg',
+    '/jose-vaz-O1e-dI0S-0A-unsplash.jpg'
   ],
   study: [
-    '/pexels-safa-shafeek-754618105-28786993.jpg',
-    '/pexels-andre-furtado-43594-2777934.jpg',
-    '/pexels-christian-heitz-285904-842711.jpg',
+    '/jason-goodman-Oalh2MojUuk-unsplash.jpg',
+    '/jody-hong-films-M0nefls0Tqg-unsplash.jpg',
+    '/kevin-mueller-Q-fL04crhYI-unsplash.jpg'
   ],
   travel: [
-    '/pexels-ahmetyuksek-33452677.jpg',
-    '/pexels-aj4xo-28135725.jpg',
-    '/pexels-the-ahnafpiash-29453805.jpg',
+    '/dino-reichmuth-A5rCN8626Ck-unsplash.jpg',
+    '/john-mcarthur-7sGVwiEDc-A-unsplash.jpg',
+    '/sergei-akin-IEl3B2MrY2M-unsplash.jpg',
   ],
   team: [
-    '/pexels-baljinder-singh-112079620-33935326.jpg',
-    '/pexels-mian-rizwan-250562-1771256.jpg',
+    '/prince-akachi-4Yv84VgQkRM-unsplash.jpg',
+    '/vlad-sargu-ItphH2lGzuI-unsplash.jpg'
   ],
   gallery: [
-    '/pexels-francesco-ungaro-1525041.jpg',
-    '/pexels-maxfrancis-2246476.jpg',
-    '/pexels-najam-ahmed-1620956-33919918.jpg',
+    '/kal-visuals-wacPlM2L3bA-unsplash.jpg',
+    '/patrick-tomasso-1-GFCYho64-unsplash.jpg',
+    '/sufyan-arshad-63QG1E_pXds-unsplash.jpg',
   ],
 };

@@ -4,18 +4,18 @@ import Image from 'next/image';
 
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { DEFAULT_MARKETING_ASSETS, useMarketingAssets } from '@/hooks/use-marketing-assets';
+import { useMarketingAssets } from '@/hooks/use-marketing-assets';
 
 const terms = [
   {
     title: '1. Service scope',
     body:
-      "MapleLeed delivers study permit planning, consultation, and travel coordination services for international students and their sponsors. We provide guidance, document preparation, and concierge support, but we do not represent the Government of Canada or guarantee visa approvals.",
+      "VisaPilot delivers study permit planning, consultation, and travel coordination services for international students and their sponsors. We provide guidance, document preparation, and concierge support, but we do not represent the Government of Canada or guarantee visa approvals.",
   },
   {
     title: '2. Account responsibility',
     body:
-      'You are responsible for the accuracy of the information and documents you share with us. If you grant collaborators access to your MapleLeed workspace, you are accountable for their actions while using the platform.',
+      'You are responsible for the accuracy of the information and documents you share with us. If you grant collaborators access to your VisaPilot workspace, you are accountable for their actions while using the platform.',
   },
   {
     title: '3. Payments and refunds',
@@ -25,7 +25,7 @@ const terms = [
   {
     title: '4. Acceptable use',
     body:
-      'Do not upload fraudulent, misleading, or defamatory materials. MapleLeed may suspend access if we identify behaviour that compromises immigration compliance, payment integrity, or platform security.',
+      'Do not upload fraudulent, misleading, or defamatory materials. VisaPilot may suspend access if we identify behaviour that compromises immigration compliance, payment integrity, or platform security.',
   },
   {
     title: '5. Data protection',
@@ -35,12 +35,12 @@ const terms = [
   {
     title: '6. Updates and contact',
     body:
-      'We may update these terms to reflect new services or regulatory guidance. Significant changes will be posted here with the date of revision. Contact support@mapleleed.com with questions or to request a signed copy.',
+      'We may update these terms to reflect new services or regulatory guidance. Significant changes will be posted here with the date of revision. Contact support@visapilot.com with questions or to request a signed copy.',
   },
 ];
 
 export default function TermsContent() {
-  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
+  const { assets } = useMarketingAssets();
   const heroImage = assets.gallery[0] ?? assets.hero[0] ?? '';
 
   return (
@@ -52,7 +52,7 @@ export default function TermsContent() {
             {heroImage ? (
               <Image
                 src={heroImage}
-                alt="Students reviewing MapleLeed service agreement"
+                alt="Students reviewing VisaPilot service agreement"
                 fill
                 priority
                 sizes="100vw"
@@ -66,9 +66,9 @@ export default function TermsContent() {
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white/80">
                 Service Agreement
               </span>
-              <h1 className="text-balance text-4xl font-headline font-bold sm:text-5xl">MapleLeed Terms of Service</h1>
+              <h1 className="text-balance text-4xl font-headline font-bold sm:text-5xl">VisaPilot Terms of Service</h1>
               <p className="text-lg text-white/80">
-                These terms explain how MapleLeed works with aspiring students, sponsors, and travellers. Please read them carefully so you understand the commitments on both sides before engaging our team.
+                These terms explain how VisaPilot works with aspiring students, sponsors, and travellers. Please read them carefully so you understand the commitments on both sides before engaging our team.
               </p>
             </div>
           </div>
@@ -79,14 +79,14 @@ export default function TermsContent() {
             <div className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-lg">
               <h2 className="text-2xl font-headline font-semibold">Summary</h2>
               <p className="text-sm text-muted-foreground">
-                MapleLeed pairs regulated immigration specialists with travel coordinators to streamline your move to Canada. We focus on accuracy, transparency, and proactive communication throughout your journey.
+                VisaPilot pairs regulated immigration specialists with travel coordinators to streamline your move to Canada. We focus on accuracy, transparency, and proactive communication throughout your journey.
               </p>
               <div className="space-y-4 text-sm text-muted-foreground">
                 <p>
                   Effective date: <strong>{new Intl.DateTimeFormat('en-CA', { dateStyle: 'long' }).format(new Date())}</strong>
                 </p>
                 <p>
-                  Questions? Email <a href="mailto:support@mapleleed.com" className="text-primary underline">support@mapleleed.com</a> or call our concierge line during North American business hours.
+                  Questions? Email <a href="mailto:support@visapilot.com" className="text-primary underline">support@visapilot.com</a> or call our concierge line during North American business hours.
                 </p>
               </div>
             </div>
