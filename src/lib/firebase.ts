@@ -1,43 +1,16 @@
-// Firebase client-side helpers
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
-import { clientEnv } from './env/client';
+import { initializeApp, getApps } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: clientEnv.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: clientEnv.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: clientEnv.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: clientEnv.NEXT_PUBLIC_FIREBASE_APP_ID,
-  ...(clientEnv.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    ? { storageBucket: clientEnv.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }
-    : {}),
-  ...(clientEnv.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    ? { messagingSenderId: clientEnv.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }
-    : {}),
-  ...(clientEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    ? { measurementId: clientEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }
-    : {}),
+  apiKey: "AlzaSyA_Aa1NRWDIJMNNjy-Jf36z7sHx9h8L_N8",
+  authDomain: "studio-9298040015-4934f.firebaseapp.com",
+  projectId: "studio-9298040015-4934f",
+  storageBucket: "studio-9298040015-4934f.appspot.com",
+  messagingSenderId: "1073025294967",
+  appId: "1:1073025294967:web:2aa3d23abb8081fb421c72",
+  measurementId: "G-xxxxxxxxxx"
 };
 
-export function getFirebaseApp() {
-  if (!getApps().length) {
-    initializeApp(firebaseConfig);
-  }
 
-  return getApp();
-}
-
-export function getFirebaseAuth() {
-  return getAuth(getFirebaseApp());
-}
-
-export function getFirebaseFirestore() {
-  return getFirestore(getFirebaseApp());
-}
-
-export function getFirebaseStorage() {
-  return getStorage(getFirebaseApp());
-}
+// Initialize Firebase
+export const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);

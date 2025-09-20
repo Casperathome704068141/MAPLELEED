@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDownloadURL, listAll, ref } from 'firebase/storage';
+import { getDownloadURL, listAll, ref, getStorage } from 'firebase/storage';
 
-import { getFirebaseStorage } from '@/lib/firebase';
+import { app as firebaseApp } from '@/lib/firebase';
 import { DEFAULT_MARKETING_ASSETS, type MarketingAssets } from '@/lib/marketing-assets';
 
 const dedupe = (values: string[]) => Array.from(new Set(values.filter(Boolean)));
@@ -54,7 +54,7 @@ export function useMarketingAssets(fallback: MarketingAssets = DEFAULT_MARKETING
       setLoading(true);
 
       try {
-        const storage = getFirebaseStorage();
+        const storage = getStorage(firebaseApp);
         const rootRef = ref(storage, 'marketing');
         const rootList = await listAll(rootRef);
 

@@ -3,10 +3,10 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 
-import { getFirebaseAuth } from '@/lib/firebase';
+import { app as firebaseApp } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
     }
 
     try {
-      const auth = getFirebaseAuth();
+      const auth = getAuth(firebaseApp);
       const credentials = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credentials.user.getIdToken();
 
