@@ -1,40 +1,37 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const ADMIN_SHARED_SECRET = process.env.ADMIN_SHARED_SECRET;
+import { ADMIN_SESSION_COOKIE, ADMIN_SHARED_SECRET_COOKIE } from '@/lib/auth';
+import { serverEnv } from '@/lib/env/server';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // If the user is trying to access the login page, let them through.
-  if (pathname === '/admin/login') {
-    return NextResponse.next();
+  const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE);
+  const secretCookie = request.cookies.get(ADMIN_SHARED_SECRET_COOKIE);
+
+  const hasValidSession = sessionCookie && secretCookie && secretCookie.value === serverEnv.ADMIN_SHARED_SECRET;
+
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    if (!hasValidSession) {
+      const loginUrl = new URL('/admin/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
-  // For any other /admin route, verify the session.
-  if (pathname.startsWith('/admin')) {
-    if (!ADMIN_SHARED_SECRET) {
-      // If the secret isn't configured, allow access but maybe log a warning.
-      // For production, you'd likely want to deny access.
-      return NextResponse.next();
-    }
-
-    const cookieSecret = request.cookies.get('admin_shared_secret')?.value;
-    if (cookieSecret === ADMIN_SHARED_SECRET) {
-      // If the cookie is valid, let them proceed.
-      return NextResponse.next();
-    }
-
-    // If the cookie is missing or invalid, redirect to the login page.
-    const loginUrl = new URL('/admin/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+  if (pathname === '/admin/login' && hasValidSession) {
+    // If the user is logged in and tries to access the login page, redirect them to the dashboard.
+    return NextResponse.redirect(new URL('/admin', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Apply the middleware to all routes under /admin.
-  // The logic inside the middleware now correctly handles the /admin/login exception.
-  matcher: ['/admin/:path*'],
+  /*
+   * Match all paths under /admin, except for the login page itself.
+   * This uses a negative lookahead to exclude /admin/login from the match.
+   * It also ignores static files and image optimization paths.
+   */
+  matcher: ['/admin/:path((?!login$).*)'],
 };
