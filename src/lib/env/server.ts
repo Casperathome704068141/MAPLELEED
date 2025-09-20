@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 const serverSchema = z.object({
@@ -14,7 +15,11 @@ const serverSchema = z.object({
   ADMIN_ALLOWED_UID: z.string().min(1, 'ADMIN_ALLOWED_UID is required'),
   ADMIN_SHARED_SECRET: z.string().min(1, 'ADMIN_SHARED_SECRET is required'),
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM_ADDRESS: z.string().email().optional(),
+  EMAIL_FROM_ADDRESS: z
+    .string()
+    .email()
+    .optional()
+    .transform(val => (val === '' ? undefined : val)),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
