@@ -1,11 +1,35 @@
 import type {Metadata} from 'next';
+
 import './globals.css';
 import '@duffel/components/dist/CardPayment.min.css';
+
 import { Toaster } from "@/components/ui/toaster"
+import { serverEnv } from '@/lib/env/server';
+
+const siteUrl = serverEnv.NEXT_PUBLIC_SITE_URL ?? 'https://visapilot.com';
 
 export const metadata: Metadata = {
-  title: 'VisaPilot',
-  description: 'Your trusted partner in navigating the visa application process.',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'VisaPilot',
+    template: '%s | VisaPilot',
+  },
+  description:
+    'VisaPilot delivers end-to-end immigration, study permit, and premium travel concierge services for students moving to Canada.',
+  openGraph: {
+    title: 'VisaPilot',
+    description:
+      'Navigate your visa, study permit, and travel bookings with an expert concierge dedicated to international students.',
+    url: siteUrl,
+    siteName: 'VisaPilot',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'VisaPilot — Study and travel concierge for international students',
+    description:
+      'Book trusted visa, study permit, and travel services with transparent pricing and concierge support.',
+  },
 };
 
 export default function RootLayout({

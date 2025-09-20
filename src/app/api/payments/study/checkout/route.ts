@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 
 import {getStripeClient, resolveBaseUrl} from '@/lib/stripe';
+import {savePendingStudyCheckout} from '@/lib/repositories/order-repository';
 
 type StudyCheckoutPayload = {
   planId?: string;
@@ -74,18 +75,39 @@ export async function POST(request: Request) {
       });
     }
 
+    const addonsTotal = validAddons.reduce((total, addonId) => total + STUDY_ADDONS[addonId].amount, 0);
+    const amountTotal = plan.amount + addonsTotal;
+
+    const normalizedPlanId = planId as string;
+    const checkoutMetadata: Record<string, string> = {
+      plan: normalizedPlanId,
+      addons: validAddons.join(','),
+      customer_name: payload.customer?.name ?? '',
+      plan_name: plan.name,
+      base_amount: String(plan.amount),
+      addons_amount: String(addonsTotal),
+    };
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      success_url: `${baseUrl}/study?payment=success&plan=${encodeURIComponent(planId)}`,
-      cancel_url: `${baseUrl}/study?payment=cancelled&plan=${encodeURIComponent(planId)}`,
+      success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/study?payment=cancelled&plan=${encodeURIComponent(normalizedPlanId)}`,
       customer_email: payload.customer?.email,
       invoice_creation: {enabled: true},
-      metadata: {
-        plan: planId,
-        addons: validAddons.join(','),
-        customer_name: payload.customer?.name ?? '',
-      },
+      metadata: checkoutMetadata,
       line_items: lineItems,
+    });
+
+    await savePendingStudyCheckout({
+      sessionId: session.id,
+      planId: normalizedPlanId,
+      planName: plan.name,
+      addons: validAddons,
+      amount: amountTotal,
+      currency: plan.currency,
+      customerEmail: payload.customer?.email,
+      customerName: payload.customer?.name,
+      metadata: checkoutMetadata,
     });
 
     return NextResponse.json({url: session.url, sessionId: session.id});

@@ -1,22 +1,38 @@
-
-// src/lib/firebase.ts
-import { initializeApp, getApp, getApps } from 'firebase/app';
+// Firebase client-side helpers
+import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
+import { getFirestore } from 'firebase/firestore';
+
+import { clientEnv } from './env/client';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA_Aa1NRWDlJMNNjy-Jf36z7sHx9h8L_N8",
-  authDomain: "studio-9298040015-4934f.firebaseapp.com",
-  databaseURL: "https://studio-9298040015-4934f-default-rtdb.firebaseio.com",
-  projectId: "studio-9298040015-4934f",
-  storageBucket: "studio-9298040015-4934f.firebasestorage.app",
-  messagingSenderId: "1073025294967",
-  appId: "1:1073025294967:web:2aa3d23abb8081fb421c72"
+  apiKey: clientEnv.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: clientEnv.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: clientEnv.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: clientEnv.NEXT_PUBLIC_FIREBASE_APP_ID,
+  ...(clientEnv.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    ? { storageBucket: clientEnv.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }
+    : {}),
+  ...(clientEnv.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    ? { messagingSenderId: clientEnv.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }
+    : {}),
+  ...(clientEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    ? { measurementId: clientEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }
+    : {}),
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getDatabase(app);
+export function getFirebaseApp() {
+  if (!getApps().length) {
+    initializeApp(firebaseConfig);
+  }
 
-export { app, auth, db };
+  return getApp();
+}
+
+export function getFirebaseAuth() {
+  return getAuth(getFirebaseApp());
+}
+
+export function getFirebaseFirestore() {
+  return getFirestore(getFirebaseApp());
+}
