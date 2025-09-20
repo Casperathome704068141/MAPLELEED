@@ -3,6 +3,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import {
   Calendar as CalendarIcon,
   Check,
@@ -48,6 +49,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DEFAULT_MARKETING_ASSETS, type MarketingAssets, useMarketingAssets } from '@/hooks/use-marketing-assets';
 
 const timeSlots = [
   '09:00 AM',
@@ -171,17 +173,167 @@ const bookingInitialState: BookingFormState = {
 };
 
 
-function StudyHero() {
+function StudyHero({ assets }: { assets: MarketingAssets }) {
+  const heroImage = assets.study[0] ?? assets.gallery[0] ?? '';
+  const secondaryImage = assets.study[2] ?? assets.team[0] ?? assets.gallery[1];
+
   return (
-    <section className="bg-card py-20 md:py-28">
-      <div className="container mx-auto px-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-headline font-bold">Your Canadian Study Permit, Sorted.</h1>
-        <p className="mt-4 text-lg max-w-3xl mx-auto text-muted-foreground">
-          From college applications to your study permit and travel arrangements, we provide end-to-end support for your journey to Canada. Explore our services and book a consultation today.
-        </p>
-         <Button size="lg" className="mt-8" asChild>
-          <a href="#pricing">See Pricing Plans</a>
-        </Button>
+    <section className="relative overflow-hidden py-20 md:py-28">
+      <div className="absolute inset-0 -z-10">
+        {heroImage ? (
+          <Image
+            src={heroImage}
+            alt="Students collaborating on MapleLeed study plans"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" aria-hidden="true" />
+      </div>
+      <div className="container relative mx-auto grid gap-12 px-4 lg:grid-cols-[minmax(0,0.65fr)_minmax(0,0.35fr)] lg:items-center">
+        <div className="space-y-6 text-center lg:text-left">
+          <h1 className="text-4xl font-headline font-bold md:text-5xl">Your Canadian study permit, sorted end to end.</h1>
+          <p className="text-lg text-muted-foreground lg:max-w-2xl">
+            MapleLeed pairs licensed consultants, curated document playbooks, and arrival support so you move from acceptance to boarding pass without guesswork.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+            <Button size="lg" asChild>
+              <a href="#pricing">
+                See pricing plans
+                <ArrowRight className="ml-2 size-5" />
+              </a>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <a href="#appointments">Book a planning call</a>
+            </Button>
+          </div>
+          <dl className="grid gap-4 pt-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Permit approvals</dt>
+              <dd className="mt-2 text-2xl font-headline font-semibold text-foreground">92% with MapleLeed prep</dd>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Average timeline</dt>
+              <dd className="mt-2 text-2xl font-headline font-semibold text-foreground">32 days faster</dd>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm backdrop-blur">
+              <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Satisfied families</dt>
+              <dd className="mt-2 text-2xl font-headline font-semibold text-foreground">4.9/5 rating</dd>
+            </div>
+          </dl>
+        </div>
+        <div className="space-y-6">
+          <Card className="overflow-hidden border-border/60 bg-background/80 shadow-lg backdrop-blur">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline">What's inside your launch plan</CardTitle>
+              <CardDescription>
+                Personalised milestones, compliance reviews, and travel readiness tasks created the moment you enrol.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <Check className="mt-0.5 size-4 text-primary" />
+                <span>Guided document checklist with consultant reviews before each submission.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="mt-0.5 size-4 text-primary" />
+                <span>Financial proof toolkit with templates for sponsors, banks, and affidavits.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="mt-0.5 size-4 text-primary" />
+                <span>Arrival concierge covering flights, accommodation, and settlement bookings.</span>
+              </div>
+            </CardContent>
+          </Card>
+          {secondaryImage ? (
+            <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card shadow-lg shadow-primary/10">
+              <Image
+                src={secondaryImage}
+                alt="MapleLeed consultant guiding a student"
+                width={640}
+                height={480}
+                sizes="(min-width: 1024px) 320px, 100vw"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent" aria-hidden="true" />
+              <p className="absolute bottom-4 left-4 text-xs font-semibold uppercase tracking-wider text-background">
+                Weekly mentor sessions
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StudyImmersionSection({ assets }: { assets: MarketingAssets }) {
+  const highlights = [
+    {
+      title: 'Document concierge',
+      description: 'Curated checklists, SOP reviews, and proof of funds coaching tailored to your program and country.',
+      image: assets.study[1] ?? assets.gallery[0] ?? '',
+    },
+    {
+      title: 'Strategy labs',
+      description: 'Weekly mentor calls align students, parents, and sponsors on next actions with compliance-first advice.',
+      image: assets.team[1] ?? assets.gallery[1] ?? '',
+    },
+    {
+      title: 'Arrival orientation',
+      description: 'Housing search, insurance, and airport reception coordinated with MapleLeed’s settlement partners.',
+      image: assets.travel[1] ?? assets.gallery[2] ?? '',
+    },
+  ];
+
+  return (
+    <section className="py-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="size-3.5" />
+            Why students choose MapleLeed
+          </span>
+          <h2 className="mt-5 text-balance text-3xl font-headline font-bold sm:text-4xl">
+            Everything you need between admission and arrival
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Each plan combines regulated expertise with transparent coordination so your paperwork, travel, and settlement stay in sync.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-8 md:grid-cols-3">
+          {highlights.map(highlight => (
+            <Card key={highlight.title} className="overflow-hidden border-border/60 bg-card/80 shadow-lg shadow-primary/10 backdrop-blur">
+              <div className="relative h-44 w-full overflow-hidden">
+                {highlight.image ? (
+                  <Image
+                    src={highlight.image}
+                    alt={highlight.title}
+                    fill
+                    sizes="(min-width: 1024px) 320px, 100vw"
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-card" aria-hidden="true" />
+                )}
+              </div>
+              <CardHeader>
+                <CardTitle className="text-xl font-headline">{highlight.title}</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground/90">
+                  {highlight.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <Sparkles className="size-3.5" />
+                  MapleLeed verified
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -805,6 +957,7 @@ function StudyPageContent() {
   const {toast} = useToast();
   const paymentStatus = searchParams.get('payment');
   const planParam = searchParams.get('plan');
+  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
 
   React.useEffect(() => {
     if (!paymentStatus) return;
@@ -837,7 +990,8 @@ function StudyPageContent() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow">
-        <StudyHero />
+        <StudyHero assets={assets} />
+        <StudyImmersionSection assets={assets} />
         <PricingSection />
         <CourseFinderSection />
         <AppointmentSection />

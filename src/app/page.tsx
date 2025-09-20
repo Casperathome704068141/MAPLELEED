@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -18,13 +19,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { LoaderVisual, PageLoader } from '@/components/page-loader';
+import { WeatherCard } from '@/components/weather-card';
+import { DEFAULT_MARKETING_ASSETS, useMarketingAssets, type MarketingAssets } from '@/hooks/use-marketing-assets';
 
-function HeroSection() {
+function HeroSection({ assets }: { assets: MarketingAssets }) {
   const stats = [
     { value: '1.2k+', label: 'Students guided to Canada' },
     { value: '97%', label: 'Visa plan satisfaction' },
     { value: '50+', label: 'Travel & housing partners' },
   ];
+  const heroPrimary = assets.hero[0] ?? assets.study[0] ?? assets.gallery[0] ?? '';
+  const heroSecondary = assets.hero[1] ?? assets.travel[0] ?? assets.gallery[1];
 
   return (
     <section className="relative overflow-hidden pb-24 pt-24 sm:pt-28 lg:pb-28 lg:pt-32">
@@ -52,8 +57,7 @@ function HeroSection() {
                 Plot your move to Canada with confidence.
               </h1>
               <p className="max-w-xl text-pretty text-lg text-muted-foreground">
-                MapleLeed blends regulated Canadian visa expertise with intelligent automation so every document, deadline, and
-                booking stays on track from day one.
+                MapleLeed pairs regulated visa specialists with modern automation so every checklist, document, and itinerary stays on track from the moment you say yes.
               </p>
             </div>
             <div className="flex flex-wrap gap-4">
@@ -80,41 +84,63 @@ function HeroSection() {
             </dl>
           </div>
           <div className="relative">
-            <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 rounded-[2.5rem] border border-border/60 bg-gradient-to-br from-card via-card/95 to-card p-10 text-center shadow-[0_40px_120px_-60px_rgba(15,23,42,0.45)] backdrop-blur">
-              <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                <span className="inline-flex size-2 rounded-full bg-primary" />
-                Real-time progress
-              </div>
-              <LoaderVisual className="size-36 text-primary" aria-hidden="true" focusable="false" />
-              <div className="space-y-5 text-left">
-                <p className="text-sm text-muted-foreground">
-                  Bookings, documentation, and approvals sync inside MapleLeed so you see what is complete, what is pending, and
-                  what happens next.
-                </p>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">
-                      <span>Visa dossier</span>
-                      <span className="text-foreground">75% ready</span>
-                    </div>
-                    <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                      <span className="block h-full w-3/4 rounded-full bg-primary" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">
-                      <span>Flight coordination</span>
-                      <span className="text-foreground">On track</span>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="inline-flex size-2 rounded-full bg-accent" />
-                      Lock ideal itinerary 45 days before departure
+            <div className="relative mx-auto h-full min-h-[420px] w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border/60 shadow-[0_40px_120px_-60px_rgba(15,23,42,0.45)]">
+              {heroPrimary ? (
+                <Image
+                  src={heroPrimary}
+                  alt="Visa experts guiding an international student"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 480px, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-card to-background" aria-hidden="true" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/20 to-transparent" aria-hidden="true" />
+              <div className="absolute inset-x-6 bottom-6 rounded-3xl bg-background/85 p-6 text-left shadow-2xl backdrop-blur">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <span className="inline-flex size-2 rounded-full bg-primary" />
+                  Real-time progress
+                </div>
+                <div className="mt-4 flex items-start gap-4">
+                  <LoaderVisual className="size-16 text-primary" aria-hidden="true" focusable="false" />
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p className="text-foreground">
+                      Dashboards surface what is approved, what needs review, and upcoming milestones so you always know the next action.
+                    </p>
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">
+                        <span>Visa dossier</span>
+                        <span className="text-foreground">75% ready</span>
+                      </div>
+                      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                        <span className="block h-full w-3/4 rounded-full bg-primary" />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            {heroSecondary ? (
+              <div className="absolute -top-6 right-6 hidden w-32 overflow-hidden rounded-3xl border border-white/40 shadow-lg shadow-primary/10 md:block">
+                <Image
+                  src={heroSecondary}
+                  alt="Celebrating MapleLeed arrivals"
+                  width={192}
+                  height={160}
+                  sizes="192px"
+                  className="h-40 w-full object-cover"
+                />
+              </div>
+            ) : null}
+            <div className="absolute -bottom-14 right-4 hidden md:block">
+              <WeatherCard />
+            </div>
           </div>
+        </div>
+        <div className="mt-16 flex justify-center md:hidden">
+          <WeatherCard />
         </div>
       </div>
     </section>
@@ -265,6 +291,75 @@ function FeatureHighlights() {
   );
 }
 
+function GlobalExperienceSection({ assets }: { assets: MarketingAssets }) {
+  const galleryEntries = [
+    { src: assets.travel[0], label: 'Airport concierge check-ins' },
+    { src: assets.study[1] ?? assets.gallery[0], label: 'Document readiness workshops' },
+    { src: assets.team[0] ?? assets.gallery[1], label: 'Visa planning huddles with families' },
+    { src: assets.gallery[2] ?? assets.travel[1], label: 'Campus arrival tours across Canada' },
+  ].filter((entry): entry is { src: string; label: string } => Boolean(entry.src));
+
+  return (
+    <section className="bg-secondary/40 py-24">
+      <div className="container mx-auto px-4">
+        <div className="grid gap-12 lg:grid-cols-[0.55fr_1fr]">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Sparkles className="size-3.5" />
+              Inside MapleLeed
+            </span>
+            <h2 className="text-balance text-3xl font-headline font-bold sm:text-4xl">
+              Real people powering every arrival story
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              From the first planning call to campus orientation, MapleLeed coordinators stay in lockstep with you and your supporters so every permit, booking, and welcome is handled with care.
+            </p>
+            <ul className="space-y-4 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <Sparkles className="mt-1 size-4 text-primary" />
+                <span>Concierges stationed in Toronto, Vancouver, Calgary, and Montreal coordinate trusted partners for housing, insurance, and settlement services.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Sparkles className="mt-1 size-4 text-primary" />
+                <span>Weekly visa readiness labs walk families through biometrics, interview prep, and proof of funds documentation.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Sparkles className="mt-1 size-4 text-primary" />
+                <span>Arrival day playbooks cover airport reception, SIM activation, and residence onboarding so you land with confidence.</span>
+              </li>
+            </ul>
+            <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Launch briefings</span>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Sponsor coordination</span>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Arrival concierge</span>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {galleryEntries.map(({ src, label }, index) => (
+              <div
+                key={`${src}-${index}`}
+                className="group relative aspect-[4/5] overflow-hidden rounded-3xl border border-border/60 bg-card shadow-lg shadow-primary/10"
+              >
+                <Image
+                  src={src}
+                  alt={label}
+                  fill
+                  sizes="(min-width: 1024px) 320px, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent" aria-hidden="true" />
+                <p className="absolute bottom-4 left-4 right-4 text-xs font-semibold uppercase tracking-wider text-background">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ProcessSection() {
   const steps = [
     {
@@ -396,6 +491,7 @@ function CTASection() {
 
 export default function Home() {
   const [isLoading, setIsLoading] = React.useState(true);
+  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
 
   React.useEffect(() => {
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -447,9 +543,10 @@ export default function Home() {
       <PageLoader active={isLoading} label="Preparing your MapleLeed experience…" />
       <Header />
       <main className="flex-grow pt-16">
-        <HeroSection />
+        <HeroSection assets={assets} />
         <ServicesSection />
         <FeatureHighlights />
+        <GlobalExperienceSection assets={assets} />
         <ProcessSection />
         <CTASection />
       </main>

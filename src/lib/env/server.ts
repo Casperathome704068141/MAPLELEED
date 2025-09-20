@@ -19,6 +19,10 @@ const serverSchema = z.object({
     .string()
     .transform(val => (val === '' ? undefined : val))
     .pipe(z.string().email().optional()),
+  TEAM_NOTIFICATIONS_EMAIL: z
+    .string()
+    .transform(val => (val === '' ? undefined : val))
+    .pipe(z.string().email().optional()),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -38,4 +42,5 @@ export const serverEnv: ServerEnv = serverSchema.parse({
   ADMIN_SHARED_SECRET: process.env.ADMIN_SHARED_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
+  TEAM_NOTIFICATIONS_EMAIL: process.env.TEAM_NOTIFICATIONS_EMAIL,
 });

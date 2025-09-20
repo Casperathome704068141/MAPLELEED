@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {FormEvent, useMemo, useRef, useState} from "react";
 import {
@@ -17,6 +18,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import type {OfferSummary, SegmentSummary} from "@/lib/travel";
 import {BookingFlowIndicator} from "@/components/travel/booking-flow-indicator";
+import { DEFAULT_MARKETING_ASSETS, useMarketingAssets } from "@/hooks/use-marketing-assets";
 
 type SearchState = {
   origin: string;
@@ -264,8 +266,17 @@ export default function TravelPage() {
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
 
   const travellerCount = lastSearch?.adults ?? 1;
+  const heroImage = assets.travel[0] ?? assets.gallery[0] ?? '';
+  const heroSecondary = assets.travel[2] ?? assets.team[0] ?? assets.gallery[1];
+  const travelShowcase = [
+    { src: assets.travel[1] ?? assets.gallery[2] ?? '', caption: 'Visa letter preparation & embassy-ready docs' },
+    { src: assets.gallery[3] ?? assets.team[0] ?? '', caption: '24/7 WhatsApp concierge and disruption care' },
+    { src: assets.gallery[1] ?? assets.travel[3] ?? '', caption: 'Group departures and guardian coordination' },
+    { src: assets.team[1] ?? assets.gallery[0] ?? '', caption: 'Arrival day support across Canada' },
+  ].filter((entry): entry is { src: string; caption: string } => Boolean(entry.src));
 
   const resultsTitle = useMemo(() => {
     if (!lastSearch) return null;
@@ -500,9 +511,22 @@ export default function TravelPage() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Header />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden bg-slate-950 pb-24 pt-28 text-slate-50 sm:pt-32">
+        <section className="relative isolate overflow-hidden pb-24 pt-28 text-slate-50 sm:pt-32">
+          <div className="absolute inset-0 -z-10">
+            {heroImage ? (
+              <Image
+                src={heroImage}
+                alt="Students departing for Canadian campuses"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
+              />
+            ) : null}
+            <div className="absolute inset-0 bg-slate-950/85" aria-hidden="true" />
+          </div>
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-primary/40 blur-3xl" />
+            <div className="absolute left-1/2 top-0 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-primary/35 blur-3xl" />
             <div className="absolute bottom-0 left-0 h-64 w-64 -translate-x-1/3 translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
           </div>
           <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-12 px-6">
@@ -515,15 +539,13 @@ export default function TravelPage() {
                   Book smarter flights with MapleLeed Travel Concierge
                 </h1>
                 <p className="max-w-2xl text-lg text-slate-200">
-                  Compare real-time Duffel fares bundled into MapleLeed best-price offers. Checkout in
-                  minutes knowing our travel team is watching over your journey until you arrive on
-                  campus.
+                  Compare real-time Duffel fares bundled into MapleLeed best-price offers. Checkout in minutes knowing our travel team is watching over your journey until you arrive on campus.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {HERO_HIGHLIGHTS.map(feature => (
                     <div
                       key={feature.title}
-                      className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm shadow-lg backdrop-blur"
+                      className="rounded-2xl border border-white/15 bg-white/10 p-4 text-sm shadow-lg shadow-primary/10 backdrop-blur"
                     >
                       <feature.icon className="mb-3 h-6 w-6 text-primary-foreground" />
                       <p className="font-semibold text-white">{feature.title}</p>
@@ -532,10 +554,10 @@ export default function TravelPage() {
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col justify-between gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
+              <div className="flex flex-col justify-between gap-6 rounded-3xl border border-white/15 bg-slate-900/60 p-6 shadow-2xl backdrop-blur">
                 <div className="space-y-6">
                   <h2 className="text-xl font-semibold text-white">Why students trust us</h2>
-                  <ul className="space-y-4 text-sm text-slate-100/80">
+                  <ul className="space-y-4 text-sm text-slate-100/85">
                     <li className="flex items-start gap-3">
                       <Clock className="mt-0.5 h-4 w-4 text-primary" />
                       <span>Average expert response time under five minutes.</span>
@@ -554,16 +576,32 @@ export default function TravelPage() {
                   {HERO_STATS.map(stat => (
                     <div
                       key={stat.label}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
                     >
                       <span className="text-sm text-white/70">{stat.label}</span>
                       <span className="text-lg font-semibold text-white">{stat.value}</span>
                     </div>
                   ))}
                 </div>
+                {heroSecondary ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10">
+                    <Image
+                      src={heroSecondary}
+                      alt="MapleLeed concierge greeting students at the airport"
+                      width={480}
+                      height={320}
+                      sizes="(min-width: 1024px) 320px, 100vw"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" aria-hidden="true" />
+                    <span className="absolute bottom-3 left-4 text-xs font-semibold uppercase tracking-wider text-white/80">
+                      Airport concierge in action
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur">
+            <div className="rounded-3xl border border-white/15 bg-slate-900/60 p-6 shadow-xl backdrop-blur">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-white/80">Popular student journeys</p>
                 <p className="text-xs uppercase tracking-wider text-white/60">Tap to pre-fill search</p>
@@ -579,6 +617,58 @@ export default function TravelPage() {
                     <span className="font-semibold">{route.origin} → {route.destination}</span>
                     <span className="text-xs text-white/70">{route.note}</span>
                   </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-secondary/30 py-20">
+          <div className="container mx-auto px-6">
+            <div className="grid gap-12 lg:grid-cols-[0.6fr_1fr] lg:items-center">
+              <div className="space-y-6">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <Sparkles className="h-4 w-4" /> What we orchestrate
+                </span>
+                <h2 className="text-balance text-3xl font-headline font-bold sm:text-4xl">
+                  Beyond tickets: arrival-ready itineraries
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  MapleLeed travel advisors coordinate embassy-ready documents, trusted partners, and arrival logistics so you step off the plane with every detail handled.
+                </p>
+                <ul className="space-y-4 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-3">
+                    <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>IRCC-compliant itinerary letters and travel insurance proofs delivered within 24 hours.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>Proactive rebooking and compensation claims when airlines change schedules.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>Arrival concierge for airport pickup, SIM activation, and residence check-ins.</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {travelShowcase.map(({ src, caption }, index) => (
+                  <div
+                    key={`${src}-${index}`}
+                    className="group relative aspect-[4/5] overflow-hidden rounded-3xl border border-border bg-card shadow-lg shadow-primary/10"
+                  >
+                    <Image
+                      src={src}
+                      alt={caption}
+                      fill
+                      sizes="(min-width: 1024px) 320px, 100vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent" aria-hidden="true" />
+                    <p className="absolute bottom-4 left-4 right-4 text-xs font-semibold uppercase tracking-wider text-background">
+                      {caption}
+                    </p>
+                  </div>
                 ))}
               </div>
             </div>
