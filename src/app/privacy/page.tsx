@@ -1,17 +1,17 @@
+'use client';
+
 import Image from 'next/image';
 import type { Metadata } from 'next';
 
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { DEFAULT_MARKETING_ASSETS } from '@/lib/marketing-assets';
+import { DEFAULT_MARKETING_ASSETS, useMarketingAssets } from '@/hooks/use-marketing-assets';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | MapleLeed',
   description:
     'Learn how MapleLeed collects, safeguards, and uses the information you share while planning your Canadian study journey.',
 };
-
-const heroImage = DEFAULT_MARKETING_ASSETS.gallery[1] ?? DEFAULT_MARKETING_ASSETS.hero[1];
 
 type PrivacySection = {
   title: string;
@@ -68,6 +68,9 @@ const sections: PrivacySection[] = [
 ];
 
 export default function PrivacyPage() {
+  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
+  const heroImage = assets.gallery[1] ?? assets.hero[1] ?? '';
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Header />

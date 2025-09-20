@@ -1,17 +1,17 @@
+'use client';
+
 import Image from 'next/image';
 import type { Metadata } from 'next';
 
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { DEFAULT_MARKETING_ASSETS } from '@/lib/marketing-assets';
+import { DEFAULT_MARKETING_ASSETS, useMarketingAssets } from '@/hooks/use-marketing-assets';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | MapleLeed',
   description:
     'Understand the service commitments, responsibilities, and acceptable use policies that govern your relationship with MapleLeed.',
 };
-
-const heroImage = DEFAULT_MARKETING_ASSETS.gallery[0] ?? DEFAULT_MARKETING_ASSETS.hero[0];
 
 const terms = [
   {
@@ -47,6 +47,9 @@ const terms = [
 ];
 
 export default function TermsPage() {
+  const { assets } = useMarketingAssets(DEFAULT_MARKETING_ASSETS);
+  const heroImage = assets.gallery[0] ?? assets.hero[0] ?? '';
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Header />

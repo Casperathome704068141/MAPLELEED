@@ -32,14 +32,14 @@ function normaliseCategory(identifier: string): CategoryKey {
   return 'gallery';
 }
 
-function mergeWithFallbacks(base: MarketingAssets, fallback: MarketingAssets): MarketingAssets {
+function mergeWithFallbacks(live: MarketingAssets, fallback: MarketingAssets): MarketingAssets {
   return {
-    hero: base.hero.length ? dedupe(base.hero) : fallback.hero,
-    study: base.study.length ? dedupe(base.study) : fallback.study,
-    travel: base.travel.length ? dedupe(base.travel) : fallback.travel,
-    team: base.team.length ? dedupe(base.team) : fallback.team,
-    gallery: base.gallery.length ? dedupe(base.gallery) : fallback.gallery,
-  } satisfies MarketingAssets;
+    hero: live.hero.length > 0 ? dedupe(live.hero) : fallback.hero,
+    study: live.study.length > 0 ? dedupe(live.study) : fallback.study,
+    travel: live.travel.length > 0 ? dedupe(live.travel) : fallback.travel,
+    team: live.team.length > 0 ? dedupe(live.team) : fallback.team,
+    gallery: live.gallery.length > 0 ? dedupe([...live.gallery, ...live.hero, ...live.study]) : fallback.gallery,
+  };
 }
 
 export function useMarketingAssets(fallback: MarketingAssets = DEFAULT_MARKETING_ASSETS) {
