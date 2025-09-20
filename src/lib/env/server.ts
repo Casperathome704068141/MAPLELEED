@@ -17,9 +17,8 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM_ADDRESS: z
     .string()
-    .email()
-    .optional()
-    .transform(val => (val === '' ? undefined : val)),
+    .transform(val => (val === '' ? undefined : val))
+    .pipe(z.string().email().optional()),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
