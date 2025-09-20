@@ -12,8 +12,8 @@ const serverSchema = z.object({
   FIREBASE_ADMIN_PRIVATE_KEY: z.string().min(1, 'FIREBASE_ADMIN_PRIVATE_KEY is required'),
   FIREBASE_APPOINTMENTS_COLLECTION: z.string().min(1).default('appointments'),
   FIREBASE_ORDERS_COLLECTION: z.string().min(1).default('orders'),
-  ADMIN_ALLOWED_UID: z.string().min(1, 'ADMIN_ALLOWED_UID is required'),
   ADMIN_ALLOWED_EMAIL: z.string().email().default('anthonyluci69@gmail.com'),
+  ADMIN_SHARED_SECRET: z.string().min(1, 'ADMIN_SHARED_SECRET is required').default('change-me'),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM_ADDRESS: z
     .string()
@@ -38,8 +38,8 @@ export const serverEnv: ServerEnv = serverSchema.parse({
   FIREBASE_ADMIN_PRIVATE_KEY: process.env.FIREBASE_ADMIN_PRIVATE_KEY,
   FIREBASE_APPOINTMENTS_COLLECTION: process.env.FIREBASE_APPOINTMENTS_COLLECTION,
   FIREBASE_ORDERS_COLLECTION: process.env.FIREBASE_ORDERS_COLLECTION,
-  ADMIN_ALLOWED_UID: process.env.ADMIN_ALLOWED_UID,
   ADMIN_ALLOWED_EMAIL: process.env.ADMIN_ALLOWED_EMAIL,
+  ADMIN_SHARED_SECRET: process.env.ADMIN_SHARED_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
   TEAM_NOTIFICATIONS_EMAIL: process.env.TEAM_NOTIFICATIONS_EMAIL,

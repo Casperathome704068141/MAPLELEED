@@ -56,7 +56,6 @@ NEXT_PUBLIC_SITE_URL=http://localhost:9002  # optional, used in Stripe helpers
 FIREBASE_ADMIN_PROJECT_ID=...
 FIREBASE_ADMIN_CLIENT_EMAIL=...
 FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-ADMIN_ALLOWED_UID=...  # Firebase UID for the primary administrator
 ```
 
 The Express server in `server/` also expects `DUFFEL_ACCESS_TOKEN`. Create `server/.env` if you run it locally.
@@ -64,11 +63,11 @@ The Express server in `server/` also expects `DUFFEL_ACCESS_TOKEN`. Create `serv
 ### Admin access & notifications
 
 - `ADMIN_ALLOWED_EMAIL` (optional) – Email address that is allowed to access the admin panel. Defaults to `anthonyluci69@gmail.com`.
-- `ADMIN_SHARED_SECRET` (optional) – Shared passphrase that must be provided during admin login. Defaults to `1Z7boubvwJTwlZn89mWuwQuiZnr1`.
+- `ADMIN_SHARED_SECRET` (optional) – Shared passphrase required during admin login. Defaults to `change-me`; update this in production.
 - `TEAM_NOTIFICATIONS_EMAIL` (optional) – Additional address that should receive operational emails. MapleLeed always copies `anthonyluci69@gmail.com`.
 - `EMAIL_FROM_ADDRESS` – Customise the sender identity for transactional email.
 
-The MapleLeed admin can now authenticate with their Firebase credentials plus the shared secret `1Z7boubvwJTwlZn89mWuwQuiZnr1`. All bookings, invoices, travel orders, and incident alerts are automatically delivered to `anthonyluci69@gmail.com`.
+Admin access now relies on matching the configured email and shared secret—no Firebase client configuration is required for sign-in. All bookings, invoices, travel orders, and incident alerts are automatically delivered to `anthonyluci69@gmail.com`.
 
 ### Running the App Locally
 

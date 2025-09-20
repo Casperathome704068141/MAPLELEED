@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDownloadURL, listAll, ref } from 'firebase/storage';
-import { getStorage } from 'firebase/storage';
-import { app } from '@/lib/firebase';
+import { getDownloadURL, listAll, ref, getStorage } from 'firebase/storage';
+
+import { getFirebaseApp, isFirebaseClientConfigured } from '@/lib/firebase';
 import { DEFAULT_MARKETING_ASSETS, type MarketingAssets } from '@/lib/marketing-assets';
 
 const dedupe = (values: string[]) => Array.from(new Set(values.filter(Boolean)));
@@ -54,7 +54,15 @@ export function useMarketingAssets(fallback: MarketingAssets = DEFAULT_MARKETING
       setLoading(true);
 
       try {
-        const storage = getStorage(app);
+        if (!isFirebaseClientConfigured()) {
+          if (!cancelled) {
+            setAssets(fallback);
+            setError(null);
+          }
+          return;
+        }
+
+        const storage = getStorage(getFirebaseApp());
         const rootRef = ref(storage, 'marketing');
         const rootList = await listAll(rootRef);
 

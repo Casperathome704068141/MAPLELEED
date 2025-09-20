@@ -1,10 +1,11 @@
 
-import { getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+
 import { clientEnv } from '@/lib/env/client';
 
-const firebaseConfig = {
+const firebaseConfig: Partial<FirebaseOptions> = {
   apiKey: clientEnv.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: clientEnv.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: clientEnv.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -14,11 +15,26 @@ const firebaseConfig = {
   measurementId: clientEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+const hasFirebaseConfig = Boolean(
+  firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId,
+);
+
 let firebaseApp: FirebaseApp | null = null;
 let firebaseStorage: FirebaseStorage | null = null;
 let firebaseAuth: Auth | null = null;
 
-function getOrInitFirebaseApp() {
+export function isFirebaseClientConfigured() {
+  return hasFirebaseConfig;
+}
+
+export function getFirebaseApp(): FirebaseApp {
+  if (!hasFirebaseConfig) {
+    throw new Error('Firebase client SDK is not configured.');
+  }
+
   if (firebaseApp) {
     return firebaseApp;
   }
@@ -26,20 +42,18 @@ function getOrInitFirebaseApp() {
   if (getApps().length > 0) {
     firebaseApp = getApps()[0];
   } else {
-    firebaseApp = initializeApp(firebaseConfig);
+    firebaseApp = initializeApp(firebaseConfig as FirebaseOptions);
   }
 
   return firebaseApp;
 }
-
-export const app = getOrInitFirebaseApp();
 
 export function getFirebaseStorage() {
   if (firebaseStorage) {
     return firebaseStorage;
   }
 
-  firebaseStorage = getStorage(getOrInitFirebaseApp());
+  firebaseStorage = getStorage(getFirebaseApp());
 
   return firebaseStorage;
 }
@@ -49,7 +63,7 @@ export function getFirebaseAuth() {
     return firebaseAuth;
   }
 
-  firebaseAuth = getAuth(getOrInitFirebaseApp());
+  firebaseAuth = getAuth(getFirebaseApp());
 
   return firebaseAuth;
 }
