@@ -14,7 +14,6 @@ const serverSchema = z.object({
   FIREBASE_ORDERS_COLLECTION: z.string().min(1).default('orders'),
   ADMIN_ALLOWED_UID: z.string().min(1, 'ADMIN_ALLOWED_UID is required'),
   ADMIN_ALLOWED_EMAIL: z.string().email().default('anthonyluci69@gmail.com'),
-  ADMIN_SHARED_SECRET: z.string().min(1, 'ADMIN_SHARED_SECRET is required').default('1Z7boubvwJTwlZn89mWuwQuiZnr1'),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM_ADDRESS: z
     .string()
@@ -41,7 +40,6 @@ export const serverEnv: ServerEnv = serverSchema.parse({
   FIREBASE_ORDERS_COLLECTION: process.env.FIREBASE_ORDERS_COLLECTION,
   ADMIN_ALLOWED_UID: process.env.ADMIN_ALLOWED_UID,
   ADMIN_ALLOWED_EMAIL: process.env.ADMIN_ALLOWED_EMAIL,
-  ADMIN_SHARED_SECRET: process.env.ADMIN_SHARED_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
   TEAM_NOTIFICATIONS_EMAIL: process.env.TEAM_NOTIFICATIONS_EMAIL,

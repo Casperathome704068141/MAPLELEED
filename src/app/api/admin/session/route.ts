@@ -1,14 +1,14 @@
+
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { ADMIN_SESSION_COOKIE, ADMIN_SHARED_SECRET_COOKIE } from '@/lib/auth';
+import { ADMIN_SESSION_COOKIE } from '@/lib/auth';
 import { getFirebaseAdminAuth } from '@/lib/firebase-admin';
 import { serverEnv } from '@/lib/env/server';
 
 const bodySchema = z.object({
   idToken: z.string().min(10),
-  sharedSecret: z.string().min(1),
 });
 
 const SESSION_EXPIRY_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
@@ -16,11 +16,7 @@ const SESSION_EXPIRY_MS = 1000 * 60 * 60 * 24 * 5; // 5 days
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
-    const { idToken, sharedSecret } = bodySchema.parse(payload);
-
-    if (sharedSecret !== serverEnv.ADMIN_SHARED_SECRET) {
-      return NextResponse.json({ error: 'Invalid shared secret.' }, { status: 401 });
-    }
+    const { idToken } = bodySchema.parse(payload);
 
     const auth = getFirebaseAdminAuth();
     const decoded = await auth.verifyIdToken(idToken, true);
@@ -47,16 +43,6 @@ export async function POST(request: Request) {
       maxAge: SESSION_EXPIRY_MS / 1000,
     });
 
-    response.cookies.set({
-      name: ADMIN_SHARED_SECRET_COOKIE,
-      value: serverEnv.ADMIN_SHARED_SECRET,
-      httpOnly: true,
-      sameSite: 'strict',
-      secure,
-      path: '/',
-      maxAge: SESSION_EXPIRY_MS / 1000,
-    });
-
     return response;
   } catch (error: any) {
     console.error('Failed to create admin session', error);
@@ -73,18 +59,6 @@ export async function DELETE() {
   if (cookieStore.get(ADMIN_SESSION_COOKIE)) {
     response.cookies.set({
       name: ADMIN_SESSION_COOKIE,
-      value: '',
-      httpOnly: true,
-      sameSite: 'strict',
-      secure,
-      path: '/',
-      maxAge: 0,
-    });
-  }
-
-  if (cookieStore.get(ADMIN_SHARED_SECRET_COOKIE)) {
-    response.cookies.set({
-      name: ADMIN_SHARED_SECRET_COOKIE,
       value: '',
       httpOnly: true,
       sameSite: 'strict',

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -6,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 
-import { app as firebaseApp } from '@/lib/firebase';
+import { app } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,23 +27,22 @@ export default function AdminLoginPage() {
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email')?.toString().trim() ?? '';
     const password = formData.get('password')?.toString() ?? '';
-    const sharedSecret = formData.get('sharedSecret')?.toString() ?? '';
 
-    if (!email || !password || !sharedSecret) {
-      setError('Email, password, and the shared secret are required.');
+    if (!email || !password) {
+      setError('Email and password are required.');
       setSubmitting(false);
       return;
     }
 
     try {
-      const auth = getAuth(firebaseApp);
+      const auth = getAuth(app);
       const credentials = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credentials.user.getIdToken();
 
       const response = await fetch('/api/admin/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, sharedSecret }),
+        body: JSON.stringify({ idToken }),
       });
 
       if (!response.ok) {
@@ -88,17 +88,6 @@ export default function AdminLoginPage() {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sharedSecret">Shared secret</Label>
-              <Input
-                id="sharedSecret"
-                name="sharedSecret"
-                type="password"
-                placeholder="Enter the shared passphrase"
                 required
                 disabled={isSubmitting}
               />
